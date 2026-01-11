@@ -1,0 +1,207 @@
+/datasets:
+  post:
+    summary: Upload a CSV dataset
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+    responses:
+      "201":
+        description: Dataset uploaded successfully
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+
+/datasets/{dataset_id}:
+  get:
+    summary: Get dataset metadata and status
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Dataset details
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+
+/datasets/{dataset_id}/analyze:
+  post:
+    summary: Analyze dataset and detect issues
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "202":
+        description: Analysis started
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisResult"
+
+
+/datasets/{dataset_id}/clean:
+  post:
+    summary: Execute data cleaning
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CleaningOptions"
+    responses:
+      "202":
+        description: Cleaning started
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CleaningExecution"
+
+
+/datasets/{dataset_id}/report:
+  get:
+    summary: Get cleaning report
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Cleaning report
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CleaningReport"
+
+
+/datasets/{dataset_id}/download:
+  get:
+    summary: Download cleaned dataset
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Cleaned CSV file
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+
+/datasets/{dataset_id}:
+  delete:
+    summary: Delete dataset and related files
+    parameters:
+      - name: dataset_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      "204":
+        description: Dataset deleted
+
+
+components:
+  schemas:
+
+    Dataset:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        row_count:
+          type: integer
+        column_count:
+          type: integer
+        status:
+          type: string
+          enum: [uploaded, analyzed, cleaned, failed]
+        created_at:
+          type: string
+          format: date-time
+
+    AnalysisResult:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataIssue"
+        summary:
+          type: string
+
+    DataIssue:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [missing_values, duplicates, type_mismatch, outliers, invalid_categories]
+        column:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high]
+
+    CleaningOptions:
+      type: object
+      properties:
+        strategy:
+          type: string
+          enum: [safe, aggressive]
+          default: safe
+
+    CleaningExecution:
+      type: object
+      properties:
+        execution_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+
+    CleaningReport:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+        steps_applied:
+          type: array
+          items:
+            type: string
+        before_after_summary:
+          type: string
+        generated_code:
+          type: string
+
+

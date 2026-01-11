@@ -1,0 +1,123 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+# =========================
+# Virtual Environments
+# =========================
+.env
+.venv
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# Environment Variables & Secrets
+# =========================
+.env.*
+*.env
+secrets/
+credentials/
+*.key
+*.pem
+*.json
+
+# =========================
+# Jupyter Notebooks
+# =========================
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# =========================
+# Data (Raw, Processed, Outputs)
+# =========================
+data/
+datasets/
+raw/
+processed/
+interim/
+outputs/
+artifacts/
+*.csv
+*.tsv
+*.xlsx
+*.parquet
+*.feather
+*.pkl
+
+# =========================
+# Model & LLM Artifacts
+# =========================
+models/
+checkpoints/
+embeddings/
+vector_store/
+faiss_index/
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# =========================
+# Logs & Cache
+# =========================
+logs/
+*.log
+.cache/
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+
+# =========================
+# LLM / API Tools
+# =========================
+.openai/
+.anthropic/
+.azure/
+.langchain.db
+wandb/
+mlruns/
+
+# =========================
+# Frontend / UI (if applicable)
+# =========================
+node_modules/
+dist/
+build/
+*.map
+
+# =========================
+# IDE / OS
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing / Coverage
+# =========================
+.coverage
+htmlcov/
+coverage.xml
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.temp
+*.swp
+*~
