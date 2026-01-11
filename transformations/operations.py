@@ -139,3 +139,55 @@ def auto_cast_type(df: pd.DataFrame, column: str) -> pd.DataFrame:
         pass
     
     return df
+
+
+def auto_cast_datetime(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """
+    Automatically detect and cast column type if it contains date/datetime values stored as strings.
+    Attempts to parse various date formats and convert to datetime64[ns].
+    
+    Args:
+        df: DataFrame to process
+        column: Column name to process
+    
+    Returns:
+        DataFrame with column cast to datetime if successful, otherwise unchanged
+    
+    Note:
+        Uses pandas to_datetime for flexible parsing.
+        Handles common date formats like:
+        - 2023-01-15, 2023/01/15
+        - 01-15-2023, 01/15/2023
+        - 15-Jan-2023, Jan 15, 2023
+        - ISO 8601 formats
+    """
+    if column not in df.columns:
+        return df
+    
+    # Only process object (string) columns
+    if df[column].dtype != 'object':
+        return df
+    
+    # Create a copy of non-null values for testing
+    non_null_values = df[column].dropna()
+    
+    if len(non_null_values) == 0:
+        return df
+    
+    # Try to convert to datetime
+    try:
+        # Test conversion on non-null values
+        test_conversion = pd.to_datetime(non_null_values, errors='coerce')
+        
+        # Check if at least 80% of non-null values were successfully converted
+        # (some flexibility for mixed content)
+        success_rate = test_conversion.notna().sum() / len(test_conversion)
+        
+        if success_rate >= 0.8:
+            # Convert the entire column
+            df[column] = pd.to_datetime(df[column], errors='coerce')
+    except (ValueError, TypeError, Exception):
+        # If conversion fails, leave as is
+        pass
+    
+    return df

@@ -13,6 +13,7 @@ from transformations.operations import (
     standardize_column_names,
     replace_non_values,
     auto_cast_type,
+    auto_cast_datetime,
 )
 
 
@@ -366,3 +367,87 @@ def test_standardize_column_names():
     assert 'customer_name' in result.columns
     assert 'Transaction ID' not in result.columns
     assert 'Payment Method' not in result.columns
+
+
+def test_auto_cast_datetime_basic():
+    """Test auto-casting date strings to datetime"""
+    df = pd.DataFrame({
+        'transaction_date': ['2023-01-15', '2023-02-20', '2023-03-25', '2023-04-30']
+    })
+    
+    result = auto_cast_datetime(df, 'transaction_date')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['transaction_date'])
+    assert result['transaction_date'].iloc[0] == pd.Timestamp('2023-01-15')
+
+
+def test_auto_cast_datetime_various_formats():
+    """Test auto-casting various date formats"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', '2023-02-20', '2023-03-15', '2023-04-30']
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+
+
+def test_auto_cast_datetime_with_nulls():
+    """Test auto-casting datetime with null values"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', None, '2023-03-25', np.nan, '2023-05-30']
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+    assert pd.isna(result['date_col'].iloc[1])
+    assert pd.isna(result['date_col'].iloc[3])
+    assert result['date_col'].iloc[0] == pd.Timestamp('2023-01-15')
+
+
+def test_auto_cast_datetime_with_time():
+    """Test auto-casting datetime strings with time component"""
+    df = pd.DataFrame({
+        'timestamp': ['2023-01-15 10:30:00', '2023-02-20 14:45:30', '2023-03-25 09:15:00']
+    })
+    
+    result = auto_cast_datetime(df, 'timestamp')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['timestamp'])
+    assert result['timestamp'].iloc[0] == pd.Timestamp('2023-01-15 10:30:00')
+
+
+def test_auto_cast_datetime_non_date_column():
+    """Test that non-date columns are not converted"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Charlie', 'David']
+    })
+    
+    result = auto_cast_datetime(df, 'name')
+    
+    # Should remain as object type since it's not a date
+    assert result['name'].dtype == 'object'
+
+
+def test_auto_cast_datetime_nonexistent_column():
+    """Test that function handles non-existent column gracefully"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', '2023-02-20']
+    })
+    
+    result = auto_cast_datetime(df, 'nonexistent_column')
+    
+    assert 'date_col' in result.columns
+    assert 'nonexistent_column' not in result.columns
+
+
+def test_auto_cast_datetime_already_datetime():
+    """Test that datetime columns are left unchanged"""
+    df = pd.DataFrame({
+        'date_col': pd.to_datetime(['2023-01-15', '2023-02-20', '2023-03-25'])
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])

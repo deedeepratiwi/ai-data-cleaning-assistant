@@ -107,6 +107,7 @@ class SuggestionService:
         columns_needing_non_value_replacement = set()
         columns_needing_standardization = set()
         columns_needing_auto_cast = set()
+        columns_needing_datetime_cast = set()
         
         # Analyze each column
         for col in df.columns:
@@ -138,6 +139,15 @@ class SuggestionService:
                     col_lower in ['id', 'key', 'code']
                 )
                 
+                # Check if it's a date/time column by name patterns
+                is_likely_date = (
+                    'date' in col_lower or
+                    'time' in col_lower or
+                    col_lower.endswith('_at') or
+                    col_lower.endswith('_on') or
+                    col_lower in ['created', 'updated', 'modified', 'deleted']
+                )
+                
                 if len(unique_values) > 1 and not is_likely_id:
                     # Check if values contain letters (not just numbers/symbols)
                     has_letters = any(any(c.isalpha() for c in str(v)) for v in unique_values)
@@ -151,6 +161,22 @@ class SuggestionService:
                         
                         if needs_standardization:
                             columns_needing_standardization.add(col)
+                
+                # Check if column is datetime stored as string
+                # Try this before numeric check since some dates might look numeric
+                if is_likely_date:
+                    try:
+                        # Test datetime conversion
+                        non_null_values = df[col].dropna()
+                        if len(non_null_values) > 0:
+                            datetime_test = pd.to_datetime(non_null_values, errors='coerce')
+                            # If most non-null values convert successfully, it's likely a date
+                            success_rate = datetime_test.notna().sum() / len(non_null_values)
+                            if success_rate > 0.8:  # 80% threshold
+                                columns_needing_datetime_cast.add(col)
+                                continue  # Skip numeric check if it's a date
+                    except (ValueError, TypeError, Exception):
+                        pass
                 
                 # Check if column is numeric stored as string
                 try:
@@ -187,7 +213,14 @@ class SuggestionService:
                 "params": {"column": get_suggestion_column_name(col)}
             })
         
-        # 4. Finally handle nulls (including those created by replace_non_values)
+        # 4. Auto-cast datetime strings
+        for col in columns_needing_datetime_cast:
+            suggestions.append({
+                "operation": "auto_cast_datetime",
+                "params": {"column": get_suggestion_column_name(col)}
+            })
+        
+        # 5. Finally handle nulls (including those created by replace_non_values)
         for col, null_count in profiling.null_counts.items():
             col_type = profiling.column_types.get(col, "object")
             
@@ -195,8 +228,8 @@ class SuggestionService:
             additional_nulls = col in columns_needing_non_value_replacement
             
             if null_count > 0 or additional_nulls:
-                # Skip if already suggested auto_cast (it will handle nulls)
-                if col in columns_needing_auto_cast:
+                # Skip if already suggested auto_cast or datetime_cast (they will handle nulls)
+                if col in columns_needing_auto_cast or col in columns_needing_datetime_cast:
                     continue
                 
                 # Skip suggesting drop_null_rows for columns where we replaced non-values

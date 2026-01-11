@@ -7,6 +7,7 @@ from transformations.operations import (
     standardize_column_names,
     replace_non_values,
     auto_cast_type,
+    auto_cast_datetime,
 )
 
 
@@ -19,4 +20,5 @@ TRANSFORMATION_REGISTRY = {
     "standardize_column_names": standardize_column_names,
     "replace_non_values": replace_non_values,
     "auto_cast_type": auto_cast_type,
+    "auto_cast_datetime": auto_cast_datetime,
 }
