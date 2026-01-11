@@ -1,5 +1,7 @@
 # 🤖 AI Data Cleaning Assistant
 
+[![Tests](https://github.com/deedeepratiwi/ai-data-cleaning-assistant/workflows/Tests/badge.svg)](https://github.com/deedeepratiwi/ai-data-cleaning-assistant/actions)
+
 ## 📌 Problem Description
 
 Raw tabular data (CSV/Excel) is often messy: inconsistent column names, missing values, mixed data types, duplicates, and unclear schemas. Cleaning this data is time-consuming, error-prone, and repetitive, especially for analysts and data scientists.
@@ -8,10 +10,119 @@ Raw tabular data (CSV/Excel) is often messy: inconsistent column names, missing 
 
 * Accepts CSV or Excel files via a web UI or API
 * Analyzes dataset structure and common data quality issues
-* Generates and applies cleaning suggestions using LLM reasoning
+* Generates and applies cleaning suggestions using rule-based or LLM reasoning
 * Returns a cleaned dataset plus a human-readable explanation of changes
 
 The system is designed as a **full-stack AI application** demonstrating modern AI development practices, API-first design, containerization, testing, and deployment.
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- pip
+
+### Local Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/deedeepratiwi/ai-data-cleaning-assistant.git
+   cd ai-data-cleaning-assistant
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Install Playwright browsers (for e2e tests)**
+   ```bash
+   python -m playwright install chromium
+   ```
+
+4. **Initialize database**
+   ```bash
+   python scripts/init_db.py
+   ```
+
+5. **Start the server**
+   ```bash
+   python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+6. **Open the landing page**
+   
+   Navigate to [http://localhost:8000](http://localhost:8000) in your browser
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+# Run all tests including e2e
+pytest tests/ -v
+```
+
+### Run Unit Tests Only
+
+```bash
+# Run transformation unit tests
+pytest tests/test_transformations.py -v
+```
+
+### Run E2E Tests
+
+```bash
+# Ensure server is running on port 8000
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+
+# Run Playwright e2e tests
+pytest tests/test_e2e_playwright.py -v
+```
+
+### Test Coverage
+
+```bash
+pytest --cov=. --cov-report=html tests/
+```
+
+---
+
+## 📋 Usage Example
+
+### Using the Web UI
+
+1. Navigate to [http://localhost:8000](http://localhost:8000)
+2. Click "Choose CSV File" and select a messy CSV file
+3. Click "Upload & Clean Data"
+4. Wait for processing to complete
+5. Download the cleaned CSV or view the cleaning report
+
+### Using the API
+
+```bash
+# 1. Upload a file
+curl -X POST http://localhost:8000/jobs/upload \
+  -F "file=@dirty_data.csv"
+# Response: {"job_id": "abc-123", "status": "pending"}
+
+# 2. Start profiling (triggers full pipeline)
+curl -X POST http://localhost:8000/jobs/abc-123/profile
+
+# 3. Check status
+curl http://localhost:8000/jobs/abc-123
+# Response: {"status": "done", ...}
+
+# 4. Download cleaned file
+curl http://localhost:8000/jobs/abc-123/download -o cleaned.csv
+
+# 5. View cleaning report
+curl http://localhost:8000/jobs/abc-123/report
+```
 
 ---
 
@@ -196,6 +307,39 @@ pytest tests/integration
 
 ---
 
+## 🔒 Security & File Management
+
+### Secure File Handling
+
+- Uploaded files are stored with UUID-based names to prevent path traversal attacks
+- File types are validated (CSV only)
+- Files are stored in a controlled `data/` directory
+- No direct user input is used in file paths
+
+### Automatic Cleanup
+
+Clean up old files manually:
+
+```bash
+python -m core.cleanup
+```
+
+Or programmatically:
+
+```python
+from core.cleanup import cleanup_old_files, cleanup_job_files
+
+# Remove files older than 7 days
+stats = cleanup_old_files(days_old=7)
+
+# Remove all files for a specific job
+cleanup_job_files(job_id="abc-123")
+```
+
+**Recommended:** Set up a cron job or scheduled task to run cleanup weekly.
+
+---
+
 ## ♻️ Reproducibility
 
 ### Local Setup
@@ -203,19 +347,25 @@ pytest tests/integration
 ```bash
 git clone <repo>
 cd ai-data-cleaning-assistant
-docker-compose up --build
+pip install -r requirements.txt
+python scripts/init_db.py
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Run Tests
 
 ```bash
-pytest
-npm test
+pytest tests/ -v
 ```
 
 ### Environment Variables
 
-See `.env.example` for required configuration.
+Create a `.env` file for configuration (optional):
+
+```env
+MCP_URL=http://mcp:9000
+DATABASE_URL=sqlite:///./data.db
+```
 
 ---
 
