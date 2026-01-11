@@ -683,24 +683,3 @@ Create a `.env` file for configuration (optional):
 MCP_URL=http://mcp:9000
 DATABASE_URL=sqlite:///./data.db
 ```
-
----
-
-## ✅ Evaluation Criteria Mapping
-
-This README explicitly documents:
-
-* Problem definition & system goals
-* AI-assisted development & MCP concepts
-* Full-stack architecture & technologies
-* API-first backend design
-* Frontend, backend, database, containerization
-* Testing, CI/CD, deployment, and reproducibility
-
-Designed to score **maximum points** against the AI Dev Tools Zoomcamp rubric.
-
----
-
-## 📄 License
-
-MIT
