@@ -3,6 +3,9 @@ from transformations.operations import (
     fill_nulls,
     cast_type,
     drop_column,
+    standardize_case,
+    replace_non_values,
+    auto_cast_type,
 )
 
 
@@ -11,4 +14,7 @@ TRANSFORMATION_REGISTRY = {
     "fill_nulls": fill_nulls,
     "cast_type": cast_type,
     "drop_column": drop_column,
+    "standardize_case": standardize_case,
+    "replace_non_values": replace_non_values,
+    "auto_cast_type": auto_cast_type,
 }
