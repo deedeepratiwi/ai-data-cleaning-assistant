@@ -13,6 +13,9 @@ from core.constants import DATA_DIR
 
 from agents.mcp_client import MCPClient
 
+# Threshold for considering a column as numeric (ratio of convertible values)
+NUMERIC_DETECTION_THRESHOLD = 0.5
+
 
 class SuggestionService:
     def __init__(self, db: Session, llm_client):
@@ -96,11 +99,8 @@ class SuggestionService:
                 # Get unique non-null values
                 unique_values = df[col].dropna().astype(str).unique()
                 
-                # Check if any non-value indicators exist
-                has_non_values = any(
-                    any(nv in str(val) for nv in non_value_indicators)
-                    for val in unique_values
-                )
+                # Check if any non-value indicators exist using vectorized operation
+                has_non_values = df[col].isin(non_value_indicators).any()
                 
                 if has_non_values:
                     columns_needing_non_value_replacement.add(col)
@@ -126,17 +126,15 @@ class SuggestionService:
                     if has_letters:
                         # Check if any value differs from its title-cased version
                         # This is the primary check for needing standardization
+                        # Store title-cased versions to avoid redundant computation
                         needs_standardization = any(
-                            str(v) != str(v).title() for v in unique_values
+                            str(v) != (title_v := str(v).title()) for v in unique_values
                         )
                         
                         if needs_standardization:
                             columns_needing_standardization.add(col)
                 
                 # Check if column is numeric stored as string
-                # Threshold for considering a column as numeric
-                NUMERIC_DETECTION_THRESHOLD = 0.5  # 50% of values must be numeric
-                
                 try:
                     # Try to convert to numeric
                     numeric_test = pd.to_numeric(df[col], errors='coerce')

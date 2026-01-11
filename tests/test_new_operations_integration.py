@@ -1,7 +1,7 @@
 """
 Integration test for the complete workflow with new transformation operations.
 Tests the fix for issue: "Add string standardization, non-value replacement, 
-and auto type casting operations are still not working yet."
+and auto type casting operations were not working."
 """
 import pandas as pd
 import pytest
