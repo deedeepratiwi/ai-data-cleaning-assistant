@@ -45,6 +45,10 @@ def replace_non_values(df: pd.DataFrame, column: str, non_values: list = None) -
         df: DataFrame to modify
         column: Column name to process
         non_values: List of strings to treat as non-values. If None, uses default list.
+    
+    Note:
+        Default list includes empty strings ('') and whitespace (' ') as non-values.
+        If your data legitimately uses these, provide a custom non_values list.
     """
     if column not in df.columns:
         return df
@@ -72,6 +76,9 @@ def auto_cast_type(df: pd.DataFrame, column: str) -> pd.DataFrame:
     """
     Automatically detect and cast column type if it contains numeric values stored as strings.
     Tries to cast to int first, then float, otherwise leaves as is.
+    
+    Note:
+        Uses pandas nullable integer type (Int64) which requires pandas >= 1.0.0
     """
     if column not in df.columns:
         return df
@@ -98,8 +105,8 @@ def auto_cast_type(df: pd.DataFrame, column: str) -> pd.DataFrame:
                 df[column] = pd.to_numeric(df[column], errors='coerce').astype('Int64')
             else:
                 df[column] = pd.to_numeric(df[column], errors='coerce')
-    except Exception:
-        # If conversion fails, leave as is
+    except (ValueError, TypeError):
+        # If conversion fails due to type issues, leave as is
         pass
     
     return df
