@@ -58,6 +58,10 @@ artifacts/
 *.feather
 *.pkl
 
+# But keep test fixtures
+!tests/fixtures/*.csv
+!tests/fixtures/*.json
+
 # =========================
 # Model & LLM Artifacts
 # =========================

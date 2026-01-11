@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Cleaning Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            margin: 20px;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f9f9ff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .file-label:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        .file-name {
+            margin-top: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .status.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .download-links {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .download-links a {
+            padding: 12px 30px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .download-links a:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .features {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .feature {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Data Cleaning Assistant</h1>
+        <p class="subtitle">Upload your messy CSV data and get it cleaned automatically</p>
+        
+        <div class="upload-section">
+            <label for="file-input" class="file-label">
+                📁 Choose CSV File
+            </label>
+            <input type="file" id="file-input" accept=".csv" />
+            <div class="file-name" id="file-name">No file selected</div>
+        </div>
+        
+        <button id="upload-btn" disabled>Upload & Clean Data</button>
+        
+        <div id="status"></div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Auto Profile</h3>
+                <p>Analyze data structure</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">✨</div>
+                <h3>AI Clean</h3>
+                <p>Smart cleaning rules</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💾</div>
+                <h3>Download</h3>
+                <p>Get clean data</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const uploadBtn = document.getElementById('upload-btn');
+        const statusDiv = document.getElementById('status');
+        
+        let selectedFile = null;
+        
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                fileName.textContent = selectedFile.name;
+                uploadBtn.disabled = false;
+            } else {
+                fileName.textContent = 'No file selected';
+                uploadBtn.disabled = true;
+            }
+        });
+        
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            uploadBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="status processing"><div class="spinner"></div>Uploading...</div>';
+            
+            try {
+                // Step 1: Upload file
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                const uploadResponse = await fetch('/jobs/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error('Upload failed');
+                }
+                
+                const uploadData = await uploadResponse.json();
+                const jobId = uploadData.job_id;
+                
+                statusDiv.innerHTML = '<div class="status processing"><div class="spinner"></div>Processing data...</div>';
+                
+                // Step 2: Start profiling (which triggers the full pipeline)
+                await fetch(`/jobs/${jobId}/profile`, {
+                    method: 'POST'
+                });
+                
+                // Step 3: Poll for completion
+                // Status list should match backend JOB_STATUS_TRANSITIONS in core/constants.py
+                let status = 'profiling';
+                let attempts = 0;
+                const maxAttempts = 60;
+                
+                while (['pending', 'profiling', 'suggesting', 'applying'].includes(status) && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const jobResponse = await fetch(`/jobs/${jobId}`);
+                    const jobData = await jobResponse.json();
+                    status = jobData.status;
+                    
+                    statusDiv.innerHTML = `<div class="status processing"><div class="spinner"></div>Status: ${status}...</div>`;
+                    attempts++;
+                }
+                
+                if (status === 'done') {
+                    statusDiv.innerHTML = `
+                        <div class="status success">✅ Data cleaned successfully!</div>
+                        <div class="download-links">
+                            <a href="/jobs/${jobId}/download" download>📥 Download Cleaned CSV</a>
+                            <a href="/jobs/${jobId}/report" target="_blank">📄 View Report</a>
+                        </div>
+                    `;
+                } else if (status === 'failed') {
+                    statusDiv.innerHTML = '<div class="status error">❌ Cleaning failed. Please try again.</div>';
+                    uploadBtn.disabled = false;
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">⏱️ Processing timeout. Please refresh and check job status.</div>';
+                    uploadBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                uploadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
