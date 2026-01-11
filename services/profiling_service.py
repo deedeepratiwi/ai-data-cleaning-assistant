@@ -32,7 +32,12 @@ class ProfilingService:
             )
 
             self.job_repo.update_status(job_id, "suggesting")
+            
+            # Auto-trigger suggesting phase
+            from services.suggestion_service import SuggestionService
+            suggestion_service = SuggestionService(self.db, None)
+            suggestion_service.run(job_id)
 
-        except Exception:
+        except Exception as e:
             self.job_repo.update_status(job_id, "failed")
             raise

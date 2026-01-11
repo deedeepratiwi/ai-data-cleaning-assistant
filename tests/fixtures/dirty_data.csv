@@ -1,0 +1,11 @@
+name,age,city,salary,email
+Alice,25,New York,50000,alice@example.com
+Bob,,Los Angeles,60000,bob@example.com
+Alice,25,New York,50000,alice@example.com
+Charlie,35,Chicago,,charlie@example.com
+David,40,Houston,80000,
+Eve,28,Phoenix,55000,eve@example.com
+,,Miami,45000,frank@example.com
+Grace,32,Seattle,70000,grace@example.com
+Grace,32,Seattle,70000,grace@example.com
+Henry,,Boston,65000,henry@example.com
