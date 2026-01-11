@@ -148,6 +148,22 @@ class SuggestionService:
                     col_lower in ['created', 'updated', 'modified', 'deleted']
                 )
                 
+                # Check if column is datetime stored as string
+                # Do this BEFORE standardization check so we can skip standardizing dates
+                if is_likely_date:
+                    try:
+                        # Test datetime conversion
+                        non_null_values = df[col].dropna()
+                        if len(non_null_values) > 0:
+                            datetime_test = pd.to_datetime(non_null_values, errors='coerce')
+                            # If most non-null values convert successfully, it's likely a date
+                            success_rate = datetime_test.notna().sum() / len(non_null_values)
+                            if success_rate > 0.8:  # 80% threshold
+                                columns_needing_datetime_cast.add(col)
+                                continue  # Skip standardization and numeric checks for datetime columns
+                    except (ValueError, TypeError):
+                        pass
+                
                 if len(unique_values) > 1 and not is_likely_id:
                     # Check if values contain letters (not just numbers/symbols)
                     has_letters = any(any(c.isalpha() for c in str(v)) for v in unique_values)
@@ -161,22 +177,6 @@ class SuggestionService:
                         
                         if needs_standardization:
                             columns_needing_standardization.add(col)
-                
-                # Check if column is datetime stored as string
-                # Try this before numeric check since some dates might look numeric
-                if is_likely_date:
-                    try:
-                        # Test datetime conversion
-                        non_null_values = df[col].dropna()
-                        if len(non_null_values) > 0:
-                            datetime_test = pd.to_datetime(non_null_values, errors='coerce')
-                            # If most non-null values convert successfully, it's likely a date
-                            success_rate = datetime_test.notna().sum() / len(non_null_values)
-                            if success_rate > 0.8:  # 80% threshold
-                                columns_needing_datetime_cast.add(col)
-                                continue  # Skip numeric check if it's a date
-                    except (ValueError, TypeError):
-                        pass
                 
                 # Check if column is numeric stored as string
                 try:
