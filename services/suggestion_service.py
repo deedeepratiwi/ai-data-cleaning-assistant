@@ -76,6 +76,19 @@ class SuggestionService:
         file_path = Path(DATA_DIR) / f"{job_id}.csv"
         df = pd.read_csv(file_path)
         
+        # Check if column names need standardization
+        needs_column_standardization = any(
+            col != col.strip().replace(' ', '_').replace('-', '_').lower() 
+            for col in df.columns
+        )
+        
+        # Add column name standardization as the first step if needed
+        if needs_column_standardization:
+            suggestions.append({
+                "operation": "standardize_column_names",
+                "params": {}
+            })
+        
         # Common non-value indicators to check for
         non_value_indicators = [
             'UNKNOWN', 'unknown', 'Unknown',

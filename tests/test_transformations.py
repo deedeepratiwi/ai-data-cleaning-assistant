@@ -10,6 +10,7 @@ from transformations.operations import (
     cast_type,
     drop_column,
     standardize_case,
+    standardize_column_names,
     replace_non_values,
     auto_cast_type,
 )
@@ -131,18 +132,18 @@ if __name__ == '__main__':
 
 
 def test_standardize_case():
-    """Test standardizing string values to title case"""
+    """Test standardizing string values to lowercase snake_case"""
     df = pd.DataFrame({
         'order_type': ['Takeaway', 'In-store', 'DELIVERY', 'in-store', 'TakeAway']
     })
     
     result = standardize_case(df, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
-    assert result['order_type'].iloc[1] == 'In-Store'
-    assert result['order_type'].iloc[2] == 'Delivery'
-    assert result['order_type'].iloc[3] == 'In-Store'
-    assert result['order_type'].iloc[4] == 'Takeaway'
+    assert result['order_type'].iloc[0] == 'takeaway'
+    assert result['order_type'].iloc[1] == 'in_store'
+    assert result['order_type'].iloc[2] == 'delivery'
+    assert result['order_type'].iloc[3] == 'in_store'
+    assert result['order_type'].iloc[4] == 'takeaway'
 
 
 def test_standardize_case_with_nulls():
@@ -153,11 +154,11 @@ def test_standardize_case_with_nulls():
     
     result = standardize_case(df, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
+    assert result['order_type'].iloc[0] == 'takeaway'
     assert pd.isna(result['order_type'].iloc[1])
-    assert result['order_type'].iloc[2] == 'Delivery'
+    assert result['order_type'].iloc[2] == 'delivery'
     assert pd.isna(result['order_type'].iloc[3])
-    assert result['order_type'].iloc[4] == 'In-Store'
+    assert result['order_type'].iloc[4] == 'in_store'
 
 
 def test_standardize_case_nonexistent_column():
@@ -295,12 +296,12 @@ def test_combined_standardize_and_replace():
     # Then standardize case
     result = standardize_case(result, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
-    assert result['order_type'].iloc[1] == 'In-Store'
+    assert result['order_type'].iloc[0] == 'takeaway'
+    assert result['order_type'].iloc[1] == 'in_store'
     assert pd.isna(result['order_type'].iloc[2])  # UNKNOWN -> NaN
     assert pd.isna(result['order_type'].iloc[3])  # already NaN
     assert pd.isna(result['order_type'].iloc[4])  # ERROR -> NaN
-    assert result['order_type'].iloc[5] == 'Delivery'
+    assert result['order_type'].iloc[5] == 'delivery'
 
 
 def test_full_workflow():
@@ -322,9 +323,9 @@ def test_full_workflow():
     df = auto_cast_type(df, 'quantity')
     
     # Verify results
-    assert df['product'].iloc[0] == 'Laptop'
-    assert df['product'].iloc[1] == 'Mouse'
-    assert df['product'].iloc[3] == 'Unknown'  # UNKNOWN is a valid product name after standardization
+    assert df['product'].iloc[0] == 'laptop'
+    assert df['product'].iloc[1] == 'mouse'
+    assert df['product'].iloc[3] == 'unknown'  # UNKNOWN is a valid product name after standardization
     
     assert pd.api.types.is_numeric_dtype(df['price'].dtype)
     assert df['price'].iloc[0] == 999.99
@@ -332,3 +333,36 @@ def test_full_workflow():
     assert pd.api.types.is_integer_dtype(df['quantity'].dtype)
     assert df['quantity'].iloc[0] == 5
     assert pd.isna(df['quantity'].iloc[2])  # N/A was replaced with NaN
+
+
+def test_standardize_case_with_trailing_spaces():
+    """Test that standardize_case removes trailing spaces"""
+    df = pd.DataFrame({
+        'location': ['New York  ', '  Los Angeles', ' Chicago ', 'Boston']
+    })
+    
+    result = standardize_case(df, 'location')
+    
+    assert result['location'].iloc[0] == 'new_york'
+    assert result['location'].iloc[1] == 'los_angeles'
+    assert result['location'].iloc[2] == 'chicago'
+    assert result['location'].iloc[3] == 'boston'
+
+
+def test_standardize_column_names():
+    """Test standardizing column names to lowercase snake_case"""
+    df = pd.DataFrame({
+        'Transaction ID': [1, 2, 3],
+        'Payment Method': ['Cash', 'Card', 'Digital'],
+        'Total-Spent': [10.0, 20.0, 30.0],
+        'Customer Name  ': ['Alice', 'Bob', 'Charlie']  # with trailing spaces
+    })
+    
+    result = standardize_column_names(df)
+    
+    assert 'transaction_id' in result.columns
+    assert 'payment_method' in result.columns
+    assert 'total_spent' in result.columns
+    assert 'customer_name' in result.columns
+    assert 'Transaction ID' not in result.columns
+    assert 'Payment Method' not in result.columns

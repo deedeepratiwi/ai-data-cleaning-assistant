@@ -66,13 +66,13 @@ def test_new_operations_workflow():
     assert pd.isna(result_df.loc[3, 'Payment Method']), "UNKNOWN in Payment Method should be NaN"
     assert pd.isna(result_df.loc[3, 'Location']), "UNKNOWN in Location should be NaN"
     
-    # Verify standardization
-    assert result_df.loc[1, 'Location'] == 'In-Store', "In-store should be standardized to In-Store"
-    assert result_df.loc[2, 'Location'] == 'In-Store', "In-store should be standardized to In-Store"
+    # Verify standardization to lowercase snake_case
+    assert result_df.loc[1, 'Location'] == 'in_store', "In-store should be standardized to in_store"
+    assert result_df.loc[2, 'Location'] == 'in_store', "In-store should be standardized to in_store"
     
-    # Verify non-UNKNOWN values were preserved
-    assert result_df.loc[0, 'Payment Method'] == 'Credit Card'
-    assert result_df.loc[0, 'Location'] == 'Takeaway'
+    # Verify non-UNKNOWN values were preserved and standardized
+    assert result_df.loc[0, 'Payment Method'] == 'credit_card'
+    assert result_df.loc[0, 'Location'] == 'takeaway'
 
 
 def test_suggestion_generation_with_new_operations():
