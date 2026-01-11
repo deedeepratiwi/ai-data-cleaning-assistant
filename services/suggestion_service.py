@@ -169,6 +169,11 @@ class SuggestionService:
                 # Skip if already suggested auto_cast (it will handle nulls)
                 if col in columns_needing_auto_cast:
                     continue
+                
+                # Skip suggesting drop_null_rows for columns where we replaced non-values
+                # Users likely want to keep these rows with NaN values
+                if additional_nulls:
+                    continue
                     
                 if "int" in col_type or "float" in col_type:
                     suggestions.append({
