@@ -14,6 +14,7 @@ from transformations.operations import (
     replace_non_values,
     auto_cast_type,
     auto_cast_datetime,
+    remove_duplicates,
 )
 
 
@@ -451,3 +452,75 @@ def test_auto_cast_datetime_already_datetime():
     result = auto_cast_datetime(df, 'date_col')
     
     assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+
+
+def test_remove_duplicates_all_columns():
+    """Test removing duplicate rows based on all columns"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Alice', 'Charlie', 'Bob'],
+        'age': [25, 30, 25, 35, 30],
+        'city': ['NYC', 'LA', 'NYC', 'SF', 'LA']
+    })
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == 3  # Should have 3 unique rows
+    assert len(df) == 5  # Original has 5 rows
+    # First occurrences should be kept
+    assert result.iloc[0]['name'] == 'Alice'
+    assert result.iloc[1]['name'] == 'Bob'
+    assert result.iloc[2]['name'] == 'Charlie'
+
+
+def test_remove_duplicates_subset():
+    """Test removing duplicates based on specific columns"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Alice', 'Charlie'],
+        'age': [25, 30, 35, 40],
+        'city': ['NYC', 'LA', 'SF', 'CHI']
+    })
+    
+    # Remove duplicates based on name column only
+    result = remove_duplicates(df, subset=['name'])
+    
+    assert len(result) == 3  # Alice appears twice, should be deduplicated
+    assert 'Alice' in result['name'].values
+    assert 'Bob' in result['name'].values
+    assert 'Charlie' in result['name'].values
+
+
+def test_remove_duplicates_keep_last():
+    """Test keeping last occurrence of duplicates"""
+    df = pd.DataFrame({
+        'id': [1, 2, 1, 3],
+        'value': ['a', 'b', 'c', 'd']
+    })
+    
+    result = remove_duplicates(df, subset=['id'], keep='last')
+    
+    assert len(result) == 3
+    # Last occurrence of id=1 has value='c'
+    assert result[result['id'] == 1]['value'].iloc[0] == 'c'
+
+
+def test_remove_duplicates_no_duplicates():
+    """Test remove_duplicates when there are no duplicates"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Charlie'],
+        'age': [25, 30, 35]
+    })
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == len(df)
+    assert result.equals(df)
+
+
+def test_remove_duplicates_empty_dataframe():
+    """Test remove_duplicates with empty DataFrame"""
+    df = pd.DataFrame({'name': [], 'age': []})
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == 0
+    assert list(result.columns) == ['name', 'age']

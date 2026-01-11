@@ -191,3 +191,24 @@ def auto_cast_datetime(df: pd.DataFrame, column: str) -> pd.DataFrame:
         pass
     
     return df
+
+
+def remove_duplicates(df: pd.DataFrame, subset: list = None, keep: str = 'first') -> pd.DataFrame:
+    """
+    Remove duplicate rows from the DataFrame.
+    
+    Args:
+        df: DataFrame to process
+        subset: List of column names to consider for identifying duplicates.
+                If None, uses all columns.
+        keep: Which duplicates to keep ('first', 'last', or False to remove all duplicates)
+    
+    Returns:
+        DataFrame with duplicates removed
+    
+    Note:
+        - 'first': Keep the first occurrence of each duplicate
+        - 'last': Keep the last occurrence of each duplicate
+        - False: Remove all duplicate rows
+    """
+    return df.drop_duplicates(subset=subset, keep=keep)

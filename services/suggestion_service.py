@@ -236,7 +236,15 @@ class SuggestionService:
                 "params": {"column": get_suggestion_column_name(col)}
             })
         
-        # 5. Finally handle nulls (including those created by replace_non_values)
+        # 5. Check for duplicate rows and suggest removal
+        duplicate_count = df.duplicated().sum()
+        if duplicate_count > 0:
+            suggestions.append({
+                "operation": "remove_duplicates",
+                "params": {"keep": "first"}  # Keep first occurrence by default
+            })
+        
+        # 6. Finally handle nulls (including those created by replace_non_values)
         for col, null_count in profiling.null_counts.items():
             col_type = profiling.column_types.get(col, "object")
             

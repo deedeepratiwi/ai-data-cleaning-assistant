@@ -8,6 +8,7 @@ from transformations.operations import (
     replace_non_values,
     auto_cast_type,
     auto_cast_datetime,
+    remove_duplicates,
 )
 
 
@@ -21,4 +22,5 @@ TRANSFORMATION_REGISTRY = {
     "replace_non_values": replace_non_values,
     "auto_cast_type": auto_cast_type,
     "auto_cast_datetime": auto_cast_datetime,
+    "remove_duplicates": remove_duplicates,
 }
