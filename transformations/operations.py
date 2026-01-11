@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def drop_null_rows(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -17,3 +18,95 @@ def cast_type(df: pd.DataFrame, column: str, dtype: str) -> pd.DataFrame:
 
 def drop_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return df.drop(columns=[column], errors="ignore")
+
+
+def standardize_case(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """
+    Standardize string values to title case (e.g., 'In-store' -> 'In-Store').
+    Only affects non-null string values.
+    """
+    if column not in df.columns:
+        return df
+    
+    # Only process if the column contains string-like values
+    if df[column].dtype == 'object':
+        df[column] = df[column].apply(
+            lambda x: x.title() if isinstance(x, str) and pd.notna(x) else x
+        )
+    
+    return df
+
+
+def replace_non_values(df: pd.DataFrame, column: str, non_values: list = None) -> pd.DataFrame:
+    """
+    Replace non-value strings (like 'UNKNOWN', 'ERROR', 'N/A', etc.) with NaN.
+    
+    Args:
+        df: DataFrame to modify
+        column: Column name to process
+        non_values: List of strings to treat as non-values. If None, uses default list.
+    
+    Note:
+        Default list includes empty strings ('') and whitespace (' ') as non-values.
+        If your data legitimately uses these, provide a custom non_values list.
+    """
+    if column not in df.columns:
+        return df
+    
+    # Default list of common non-value indicators
+    if non_values is None:
+        non_values = [
+            'UNKNOWN', 'unknown', 'Unknown',
+            'ERROR', 'error', 'Error',
+            'N/A', 'n/a', 'NA', 'na',
+            'NULL', 'null', 'Null',
+            'NONE', 'none', 'None',
+            'NIL', 'nil', 'Nil',
+            '-', '--', '---',
+            '', ' '
+        ]
+    
+    # Replace non-values with NaN
+    df[column] = df[column].replace(non_values, np.nan)
+    
+    return df
+
+
+def auto_cast_type(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """
+    Automatically detect and cast column type if it contains numeric values stored as strings.
+    Tries to cast to int first, then float, otherwise leaves as is.
+    
+    Note:
+        Uses pandas nullable integer type (Int64) which requires pandas >= 1.0.0
+    """
+    if column not in df.columns:
+        return df
+    
+    # Only process object (string) columns
+    if df[column].dtype != 'object':
+        return df
+    
+    # Create a copy of non-null values for testing
+    non_null_values = df[column].dropna()
+    
+    if len(non_null_values) == 0:
+        return df
+    
+    # Try to convert to numeric
+    try:
+        # Attempt to convert to numeric
+        numeric_values = pd.to_numeric(non_null_values, errors='coerce')
+        
+        # Check if all non-null values were successfully converted
+        if numeric_values.notna().all():
+            # Check if all values are integers
+            if (numeric_values % 1 == 0).all():
+                df[column] = pd.to_numeric(df[column], errors='coerce').astype('Int64')
+            else:
+                df[column] = pd.to_numeric(df[column], errors='coerce')
+    except (ValueError, TypeError):
+        # If conversion fails due to type issues, leave as is
+        pass
+    
+    return df
