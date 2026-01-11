@@ -52,7 +52,7 @@ def get_dtypes(job_id: str):
     if not os.path.exists(metadata_path):
         raise HTTPException(status_code=404, detail="Dtype metadata not found")
 
-    with open(metadata_path, 'r') as f:
+    with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
     
     return JSONResponse(content=metadata)
