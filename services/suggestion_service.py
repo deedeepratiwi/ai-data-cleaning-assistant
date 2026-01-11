@@ -184,11 +184,10 @@ class SuggestionService:
                     # Check if values contain letters (not just numbers/symbols)
                     has_letters = any(any(c.isalpha() for c in str(v)) for v in unique_values)
                     if has_letters:
-                        # Check if any value differs from its title-cased version
+                        # Check if any value differs from its snake_case version
                         # This is the primary check for needing standardization
-                        # Store title-cased versions to avoid redundant computation
                         needs_standardization = any(
-                            str(v) != (title_v := str(v).title()) for v in unique_values
+                            str(v) != _to_snake_case(str(v)) for v in unique_values
                         )
                         
                         if needs_standardization:
