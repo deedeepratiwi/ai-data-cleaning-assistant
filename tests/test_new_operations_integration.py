@@ -77,41 +77,30 @@ def test_new_operations_workflow():
 
 def test_suggestion_generation_with_new_operations():
     """
-    Test that the suggestion service generates correct suggestions for data with
-    ERROR and UNKNOWN values.
+    Test that columns with ERROR and UNKNOWN values can be properly cleaned
+    by the new operations.
     """
-    # This test requires mocking the suggestion service
-    # We'll test the logic directly
-    
     df = pd.DataFrame({
         'Total Spent': ['4.0', '12.0', 'ERROR', '10.0'],
         'Status': ['Active', 'UNKNOWN', 'Active', 'ERROR'],
     })
     
-    # Check for non-value indicators
-    non_value_indicators = ['UNKNOWN', 'ERROR']
+    # Apply the operations that should be suggested
+    from transformations.operations import replace_non_values, auto_cast_type
     
-    # Total Spent should be identified for both replace_non_values and auto_cast_type
-    total_spent_values = df['Total Spent'].dropna().astype(str).unique()
-    has_non_values_total = any(
-        any(nv in str(val) for nv in non_value_indicators)
-        for val in total_spent_values
-    )
-    assert has_non_values_total, "Total Spent should have non-values (ERROR)"
+    # Test Total Spent: should replace ERROR and then auto-cast to numeric
+    df_cleaned = replace_non_values(df.copy(), 'Total Spent')
+    assert pd.isna(df_cleaned.loc[2, 'Total Spent']), "ERROR should be replaced with NaN"
     
-    # Test numeric detection
-    numeric_test = pd.to_numeric(df['Total Spent'], errors='coerce')
-    non_null_count = df['Total Spent'].notna().sum()
-    converted_count = numeric_test.notna().sum()
-    assert converted_count / non_null_count >= 0.5, "Total Spent should be detected as numeric"
+    df_cleaned = auto_cast_type(df_cleaned, 'Total Spent')
+    assert pd.api.types.is_numeric_dtype(df_cleaned['Total Spent']), "Total Spent should be numeric after auto_cast_type"
+    assert df_cleaned.loc[0, 'Total Spent'] == 4.0, "Numeric values should be preserved"
     
-    # Status should be identified for replace_non_values
-    status_values = df['Status'].dropna().astype(str).unique()
-    has_non_values_status = any(
-        any(nv in str(val) for nv in non_value_indicators)
-        for val in status_values
-    )
-    assert has_non_values_status, "Status should have non-values (UNKNOWN, ERROR)"
+    # Test Status: should replace both UNKNOWN and ERROR
+    df_status = replace_non_values(df.copy(), 'Status')
+    assert pd.isna(df_status.loc[1, 'Status']), "UNKNOWN should be replaced with NaN"
+    assert pd.isna(df_status.loc[3, 'Status']), "ERROR should be replaced with NaN"
+    assert df_status.loc[0, 'Status'] == 'Active', "Valid values should be preserved"
 
 
 if __name__ == '__main__':

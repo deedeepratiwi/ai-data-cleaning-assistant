@@ -109,21 +109,34 @@ class SuggestionService:
                 # Skip columns that look like IDs or codes (contain mostly numbers/underscores)
                 # We'll standardize if there are multiple unique values with letters
                 col_lower = col.lower()
-                is_likely_id = 'id' in col_lower or 'code' in col_lower or 'key' in col_lower
+                # More precise ID detection: check for ID as a word (at start, end, or surrounded by non-letters)
+                is_likely_id = (
+                    col_lower.endswith('_id') or 
+                    col_lower.endswith('_key') or
+                    col_lower.endswith('_code') or
+                    col_lower.startswith('id_') or
+                    col_lower.startswith('key_') or
+                    col_lower.startswith('code_') or
+                    col_lower in ['id', 'key', 'code']
+                )
                 
                 if len(unique_values) > 1 and not is_likely_id:
                     # Check if values contain letters (not just numbers/symbols)
                     has_letters = any(any(c.isalpha() for c in str(v)) for v in unique_values)
                     if has_letters:
-                        # Convert to lowercase for comparison
-                        lower_values = [str(v).lower() for v in unique_values]
-                        # Check for mixed casing or if standardization would help
-                        if len(lower_values) != len(set(lower_values)) or any(
+                        # Check if any value differs from its title-cased version
+                        # This is the primary check for needing standardization
+                        needs_standardization = any(
                             str(v) != str(v).title() for v in unique_values
-                        ):
+                        )
+                        
+                        if needs_standardization:
                             columns_needing_standardization.add(col)
                 
                 # Check if column is numeric stored as string
+                # Threshold for considering a column as numeric
+                NUMERIC_DETECTION_THRESHOLD = 0.5  # 50% of values must be numeric
+                
                 try:
                     # Try to convert to numeric
                     numeric_test = pd.to_numeric(df[col], errors='coerce')
@@ -131,7 +144,7 @@ class SuggestionService:
                     non_null_count = df[col].notna().sum()
                     if non_null_count > 0:
                         converted_count = numeric_test.notna().sum()
-                        if converted_count / non_null_count > 0.5:  # More than 50% are numeric
+                        if converted_count / non_null_count > NUMERIC_DETECTION_THRESHOLD:
                             columns_needing_auto_cast.add(col)
                 except (ValueError, TypeError):
                     pass
