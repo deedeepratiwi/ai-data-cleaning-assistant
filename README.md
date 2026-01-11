@@ -34,20 +34,22 @@ TXN_4271903     | Credit Card    | In-store   | ERROR       | 2023-07-19
 TXN_7034554     | UNKNOWN        | UNKNOWN    | 10.0        | 2023-04-27
 ```
 
-**Cleaned Output:**
+**Cleaned CSV Output:**
 ```
 transaction_id  | payment_method | location  | total_spent | transaction_date
-TXN_1961373     | credit_card    | takeaway  | 4.0         | 2023-09-08 (datetime64)
-TXN_4271903     | credit_card    | in_store  | NaN         | 2023-07-19 (datetime64)
-TXN_7034554     | NaN            | NaN       | 10.0        | 2023-04-27 (datetime64)
+TXN_1961373     | credit_card    | takeaway  | 4.0         | 2023-09-08
+TXN_4271903     | credit_card    | in_store  | NaN         | 2023-07-19
+TXN_7034554     | NaN            | NaN       | 10.0        | 2023-04-27
 ```
 
 **Applied Transformations:**
 1. Column names → snake_case
 2. ERROR/UNKNOWN → NaN
 3. Values → lowercase (credit_card, in_store, takeaway)
-4. Dates → datetime64[ns] type
+4. Dates → datetime64[ns] type (in memory; use parse_dates when reading CSV)
 5. Numeric columns → proper float64 type
+
+**Note:** CSV format stores everything as text. Use the dtype metadata endpoint and `pd.read_csv(..., parse_dates=['transaction_date'])` to restore proper data types.
 
 The system is designed as a **full-stack AI application** demonstrating modern AI development practices, API-first design, containerization, testing, and deployment.
 
