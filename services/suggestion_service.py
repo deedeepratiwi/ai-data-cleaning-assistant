@@ -51,6 +51,9 @@ class SuggestionService:
             self.job_repo.update_status(job_id, "applying")
             
             # Auto-trigger applying phase
+            # Note: This creates an in-process orchestration flow.
+            # In production, consider using a message queue (Celery, RabbitMQ)
+            # or workflow engine (n8n, Temporal) to avoid circular imports
             from services.apply_service import ApplyService
             apply_service = ApplyService(self.db)
             apply_service.run(job_id)

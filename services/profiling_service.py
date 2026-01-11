@@ -34,6 +34,9 @@ class ProfilingService:
             self.job_repo.update_status(job_id, "suggesting")
             
             # Auto-trigger suggesting phase
+            # Note: This creates an in-process orchestration flow.
+            # In production, consider using a message queue (Celery, RabbitMQ)
+            # or workflow engine (n8n, Temporal) to avoid circular imports
             from services.suggestion_service import SuggestionService
             suggestion_service = SuggestionService(self.db, None)
             suggestion_service.run(job_id)

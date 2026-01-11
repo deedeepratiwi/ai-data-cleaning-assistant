@@ -248,6 +248,7 @@
                 });
                 
                 // Step 3: Poll for completion
+                // Status list should match backend JOB_STATUS_TRANSITIONS in core/constants.py
                 let status = 'profiling';
                 let attempts = 0;
                 const maxAttempts = 60;

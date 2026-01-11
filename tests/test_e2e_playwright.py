@@ -110,20 +110,25 @@ def test_download_cleaned_file(page: Page, test_csv_file: Path):
     assert download.suggested_filename.endswith("_cleaned.csv")
     
     # Save and check content
-    download_path = Path("/tmp") / download.suggested_filename
-    download.save_as(download_path)
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp_file:
+        download_path = Path(tmp_file.name)
     
-    # Verify file exists and has content
-    assert download_path.exists()
-    content = download_path.read_text()
-    
-    # Check that cleaned data has expected structure
-    assert "name,age,city,salary,email" in content
-    assert "Alice" in content
-    assert "Bob" in content
-    
-    # Clean up
-    download_path.unlink()
+    try:
+        download.save_as(download_path)
+        
+        # Verify file exists and has content
+        assert download_path.exists()
+        content = download_path.read_text()
+        
+        # Check that cleaned data has expected structure
+        assert "name,age,city,salary,email" in content
+        assert "Alice" in content
+        assert "Bob" in content
+    finally:
+        # Clean up
+        if download_path.exists():
+            download_path.unlink()
 
 
 def test_health_endpoint(page: Page):
