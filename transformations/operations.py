@@ -20,6 +20,24 @@ def drop_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return df.drop(columns=[column], errors="ignore")
 
 
+def _to_snake_case(text: str) -> str:
+    """
+    Helper function to convert text to lowercase snake_case.
+    Removes trailing/leading spaces, converts spaces and hyphens to underscores.
+    
+    Args:
+        text: String to convert
+        
+    Returns:
+        Lowercase snake_case string
+        
+    Example:
+        'In-store  ' -> 'in_store'
+        'Credit Card' -> 'credit_card'
+    """
+    return text.strip().replace(' ', '_').replace('-', '_').lower()
+
+
 def standardize_case(df: pd.DataFrame, column: str) -> pd.DataFrame:
     """
     Standardize string values to lowercase snake_case (e.g., 'In-store' -> 'in_store', 'Credit Card' -> 'credit_card').
@@ -32,7 +50,7 @@ def standardize_case(df: pd.DataFrame, column: str) -> pd.DataFrame:
     # Only process if the column contains string-like values
     if df[column].dtype == 'object':
         df[column] = df[column].apply(
-            lambda x: x.strip().replace(' ', '_').replace('-', '_').lower() if isinstance(x, str) and pd.notna(x) else x
+            lambda x: _to_snake_case(x) if isinstance(x, str) and pd.notna(x) else x
         )
     
     return df
@@ -44,7 +62,7 @@ def standardize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     Removes trailing spaces and converts spaces and hyphens to underscores.
     Example: 'Payment Method' -> 'payment_method', 'Total-Spent' -> 'total_spent'
     """
-    df.columns = [col.strip().replace(' ', '_').replace('-', '_').lower() for col in df.columns]
+    df.columns = [_to_snake_case(col) for col in df.columns]
     return df
 
 

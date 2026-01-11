@@ -10,6 +10,7 @@ from storage.db.repository import (
 from agents.data_cleaning_agent import DataCleaningAgent
 from services.job_service import can_transition
 from core.constants import DATA_DIR
+from transformations.operations import _to_snake_case
 
 from agents.mcp_client import MCPClient
 
@@ -78,8 +79,7 @@ class SuggestionService:
         
         # Check if column names need standardization
         needs_column_standardization = any(
-            col != col.strip().replace(' ', '_').replace('-', '_').lower() 
-            for col in df.columns
+            col != _to_snake_case(col) for col in df.columns
         )
         
         # Add column name standardization as the first step if needed
