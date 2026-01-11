@@ -186,7 +186,7 @@ def auto_cast_datetime(df: pd.DataFrame, column: str) -> pd.DataFrame:
         if success_rate >= 0.8:
             # Convert the entire column
             df[column] = pd.to_datetime(df[column], errors='coerce')
-    except (ValueError, TypeError, Exception):
+    except (ValueError, TypeError):
         # If conversion fails, leave as is
         pass
     

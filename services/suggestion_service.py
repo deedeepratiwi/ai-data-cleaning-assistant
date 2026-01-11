@@ -175,7 +175,7 @@ class SuggestionService:
                             if success_rate > 0.8:  # 80% threshold
                                 columns_needing_datetime_cast.add(col)
                                 continue  # Skip numeric check if it's a date
-                    except (ValueError, TypeError, Exception):
+                    except (ValueError, TypeError):
                         pass
                 
                 # Check if column is numeric stored as string
