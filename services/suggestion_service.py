@@ -17,6 +17,32 @@ from agents.mcp_client import MCPClient
 # Threshold for considering a column as numeric (ratio of convertible values)
 NUMERIC_DETECTION_THRESHOLD = 0.5
 
+# Threshold for considering a column as datetime (ratio of convertible values)
+DATETIME_DETECTION_THRESHOLD = 0.8
+
+
+def _is_datetime_column(series: pd.Series, threshold: float = DATETIME_DETECTION_THRESHOLD) -> bool:
+    """
+    Check if a pandas Series contains datetime values.
+    
+    Args:
+        series: Pandas Series to check
+        threshold: Minimum ratio of values that must convert successfully (default: 0.8)
+    
+    Returns:
+        True if the series can be converted to datetime with success rate >= threshold
+    """
+    try:
+        non_null_values = series.dropna()
+        if len(non_null_values) == 0:
+            return False
+        
+        datetime_test = pd.to_datetime(non_null_values, errors='coerce')
+        success_rate = datetime_test.notna().sum() / len(non_null_values)
+        return success_rate >= threshold
+    except (ValueError, TypeError):
+        return False
+
 
 class SuggestionService:
     def __init__(self, db: Session, llm_client):
@@ -150,19 +176,9 @@ class SuggestionService:
                 
                 # Check if column is datetime stored as string
                 # Do this BEFORE standardization check so we can skip standardizing dates
-                if is_likely_date:
-                    try:
-                        # Test datetime conversion
-                        non_null_values = df[col].dropna()
-                        if len(non_null_values) > 0:
-                            datetime_test = pd.to_datetime(non_null_values, errors='coerce')
-                            # If most non-null values convert successfully, it's likely a date
-                            success_rate = datetime_test.notna().sum() / len(non_null_values)
-                            if success_rate > 0.8:  # 80% threshold
-                                columns_needing_datetime_cast.add(col)
-                                continue  # Skip standardization and numeric checks for datetime columns
-                    except (ValueError, TypeError):
-                        pass
+                if is_likely_date and _is_datetime_column(df[col]):
+                    columns_needing_datetime_cast.add(col)
+                    continue  # Skip standardization and numeric checks for datetime columns
                 
                 if len(unique_values) > 1 and not is_likely_id:
                     # Check if values contain letters (not just numbers/symbols)
