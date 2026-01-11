@@ -201,14 +201,26 @@ def remove_duplicates(df: pd.DataFrame, subset: list = None, keep: str = 'first'
         df: DataFrame to process
         subset: List of column names to consider for identifying duplicates.
                 If None, uses all columns.
-        keep: Which duplicates to keep ('first', 'last', or False to remove all duplicates)
+        keep: Which duplicates to keep ('first', 'last', or False)
+              - 'first': Keep the first occurrence of each duplicate (default)
+              - 'last': Keep the last occurrence of each duplicate
+              - False: Remove ALL occurrences of duplicates (including originals)
     
     Returns:
         DataFrame with duplicates removed
     
-    Note:
-        - 'first': Keep the first occurrence of each duplicate
-        - 'last': Keep the last occurrence of each duplicate
-        - False: Remove all duplicate rows
+    Warning:
+        When keep=False, ALL rows with duplicates are removed, including the first
+        occurrence. This may result in significant data loss if many rows are duplicated.
+    
+    Example:
+        >>> df = pd.DataFrame({'A': [1, 2, 1], 'B': ['x', 'y', 'x']})
+        >>> remove_duplicates(df, keep='first')
+           A  B
+        0  1  x
+        1  2  y
+        >>> remove_duplicates(df, keep=False)  # Removes row 0 AND 2
+           A  B
+        1  2  y
     """
     return df.drop_duplicates(subset=subset, keep=keep)
