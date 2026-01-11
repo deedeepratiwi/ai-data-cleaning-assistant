@@ -162,24 +162,28 @@ class SuggestionService:
         
         # Generate suggestions in the right order:
         # 1. Replace non-values first (converts ERROR/UNKNOWN to NaN)
+        # If column names will be standardized, use snake_case names in all suggestions
         for col in columns_needing_non_value_replacement:
+            col_name = _to_snake_case(col) if needs_column_standardization else col
             suggestions.append({
                 "operation": "replace_non_values",
-                "params": {"column": col}
+                "params": {"column": col_name}
             })
         
         # 2. Then standardize case for remaining string values
         for col in columns_needing_standardization:
+            col_name = _to_snake_case(col) if needs_column_standardization else col
             suggestions.append({
                 "operation": "standardize_case",
-                "params": {"column": col}
+                "params": {"column": col_name}
             })
         
         # 3. Then auto-cast numeric strings
         for col in columns_needing_auto_cast:
+            col_name = _to_snake_case(col) if needs_column_standardization else col
             suggestions.append({
                 "operation": "auto_cast_type",
-                "params": {"column": col}
+                "params": {"column": col_name}
             })
         
         # 4. Finally handle nulls (including those created by replace_non_values)
@@ -198,16 +202,18 @@ class SuggestionService:
                 # Users likely want to keep these rows with NaN values
                 if additional_nulls:
                     continue
+                
+                col_name = _to_snake_case(col) if needs_column_standardization else col
                     
                 if "int" in col_type or "float" in col_type:
                     suggestions.append({
                         "operation": "fill_nulls",
-                        "params": {"column": col, "value": 0}
+                        "params": {"column": col_name, "value": 0}
                     })
                 else:
                     suggestions.append({
                         "operation": "drop_null_rows",
-                        "params": {"column": col}
+                        "params": {"column": col_name}
                     })
         
         return suggestions
