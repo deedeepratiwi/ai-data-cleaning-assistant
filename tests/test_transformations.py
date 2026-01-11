@@ -10,8 +10,11 @@ from transformations.operations import (
     cast_type,
     drop_column,
     standardize_case,
+    standardize_column_names,
     replace_non_values,
     auto_cast_type,
+    auto_cast_datetime,
+    remove_duplicates,
 )
 
 
@@ -131,18 +134,18 @@ if __name__ == '__main__':
 
 
 def test_standardize_case():
-    """Test standardizing string values to title case"""
+    """Test standardizing string values to lowercase snake_case"""
     df = pd.DataFrame({
         'order_type': ['Takeaway', 'In-store', 'DELIVERY', 'in-store', 'TakeAway']
     })
     
     result = standardize_case(df, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
-    assert result['order_type'].iloc[1] == 'In-Store'
-    assert result['order_type'].iloc[2] == 'Delivery'
-    assert result['order_type'].iloc[3] == 'In-Store'
-    assert result['order_type'].iloc[4] == 'Takeaway'
+    assert result['order_type'].iloc[0] == 'takeaway'
+    assert result['order_type'].iloc[1] == 'in_store'
+    assert result['order_type'].iloc[2] == 'delivery'
+    assert result['order_type'].iloc[3] == 'in_store'
+    assert result['order_type'].iloc[4] == 'takeaway'
 
 
 def test_standardize_case_with_nulls():
@@ -153,11 +156,11 @@ def test_standardize_case_with_nulls():
     
     result = standardize_case(df, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
+    assert result['order_type'].iloc[0] == 'takeaway'
     assert pd.isna(result['order_type'].iloc[1])
-    assert result['order_type'].iloc[2] == 'Delivery'
+    assert result['order_type'].iloc[2] == 'delivery'
     assert pd.isna(result['order_type'].iloc[3])
-    assert result['order_type'].iloc[4] == 'In-Store'
+    assert result['order_type'].iloc[4] == 'in_store'
 
 
 def test_standardize_case_nonexistent_column():
@@ -295,12 +298,12 @@ def test_combined_standardize_and_replace():
     # Then standardize case
     result = standardize_case(result, 'order_type')
     
-    assert result['order_type'].iloc[0] == 'Takeaway'
-    assert result['order_type'].iloc[1] == 'In-Store'
+    assert result['order_type'].iloc[0] == 'takeaway'
+    assert result['order_type'].iloc[1] == 'in_store'
     assert pd.isna(result['order_type'].iloc[2])  # UNKNOWN -> NaN
     assert pd.isna(result['order_type'].iloc[3])  # already NaN
     assert pd.isna(result['order_type'].iloc[4])  # ERROR -> NaN
-    assert result['order_type'].iloc[5] == 'Delivery'
+    assert result['order_type'].iloc[5] == 'delivery'
 
 
 def test_full_workflow():
@@ -322,9 +325,9 @@ def test_full_workflow():
     df = auto_cast_type(df, 'quantity')
     
     # Verify results
-    assert df['product'].iloc[0] == 'Laptop'
-    assert df['product'].iloc[1] == 'Mouse'
-    assert df['product'].iloc[3] == 'Unknown'  # UNKNOWN is a valid product name after standardization
+    assert df['product'].iloc[0] == 'laptop'
+    assert df['product'].iloc[1] == 'mouse'
+    assert df['product'].iloc[3] == 'unknown'  # UNKNOWN is a valid product name after standardization
     
     assert pd.api.types.is_numeric_dtype(df['price'].dtype)
     assert df['price'].iloc[0] == 999.99
@@ -332,3 +335,192 @@ def test_full_workflow():
     assert pd.api.types.is_integer_dtype(df['quantity'].dtype)
     assert df['quantity'].iloc[0] == 5
     assert pd.isna(df['quantity'].iloc[2])  # N/A was replaced with NaN
+
+
+def test_standardize_case_with_trailing_spaces():
+    """Test that standardize_case removes trailing spaces"""
+    df = pd.DataFrame({
+        'location': ['New York  ', '  Los Angeles', ' Chicago ', 'Boston']
+    })
+    
+    result = standardize_case(df, 'location')
+    
+    assert result['location'].iloc[0] == 'new_york'
+    assert result['location'].iloc[1] == 'los_angeles'
+    assert result['location'].iloc[2] == 'chicago'
+    assert result['location'].iloc[3] == 'boston'
+
+
+def test_standardize_column_names():
+    """Test standardizing column names to lowercase snake_case"""
+    df = pd.DataFrame({
+        'Transaction ID': [1, 2, 3],
+        'Payment Method': ['Cash', 'Card', 'Digital'],
+        'Total-Spent': [10.0, 20.0, 30.0],
+        'Customer Name  ': ['Alice', 'Bob', 'Charlie']  # with trailing spaces
+    })
+    
+    result = standardize_column_names(df)
+    
+    assert 'transaction_id' in result.columns
+    assert 'payment_method' in result.columns
+    assert 'total_spent' in result.columns
+    assert 'customer_name' in result.columns
+    assert 'Transaction ID' not in result.columns
+    assert 'Payment Method' not in result.columns
+
+
+def test_auto_cast_datetime_basic():
+    """Test auto-casting date strings to datetime"""
+    df = pd.DataFrame({
+        'transaction_date': ['2023-01-15', '2023-02-20', '2023-03-25', '2023-04-30']
+    })
+    
+    result = auto_cast_datetime(df, 'transaction_date')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['transaction_date'])
+    assert result['transaction_date'].iloc[0] == pd.Timestamp('2023-01-15')
+
+
+def test_auto_cast_datetime_various_formats():
+    """Test auto-casting various date formats"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', '2023-02-20', '2023-03-15', '2023-04-30']
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+
+
+def test_auto_cast_datetime_with_nulls():
+    """Test auto-casting datetime with null values"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', None, '2023-03-25', np.nan, '2023-05-30']
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+    assert pd.isna(result['date_col'].iloc[1])
+    assert pd.isna(result['date_col'].iloc[3])
+    assert result['date_col'].iloc[0] == pd.Timestamp('2023-01-15')
+
+
+def test_auto_cast_datetime_with_time():
+    """Test auto-casting datetime strings with time component"""
+    df = pd.DataFrame({
+        'timestamp': ['2023-01-15 10:30:00', '2023-02-20 14:45:30', '2023-03-25 09:15:00']
+    })
+    
+    result = auto_cast_datetime(df, 'timestamp')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['timestamp'])
+    assert result['timestamp'].iloc[0] == pd.Timestamp('2023-01-15 10:30:00')
+
+
+def test_auto_cast_datetime_non_date_column():
+    """Test that non-date columns are not converted"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Charlie', 'David']
+    })
+    
+    result = auto_cast_datetime(df, 'name')
+    
+    # Should remain as object type since it's not a date
+    assert result['name'].dtype == 'object'
+
+
+def test_auto_cast_datetime_nonexistent_column():
+    """Test that function handles non-existent column gracefully"""
+    df = pd.DataFrame({
+        'date_col': ['2023-01-15', '2023-02-20']
+    })
+    
+    result = auto_cast_datetime(df, 'nonexistent_column')
+    
+    assert 'date_col' in result.columns
+    assert 'nonexistent_column' not in result.columns
+
+
+def test_auto_cast_datetime_already_datetime():
+    """Test that datetime columns are left unchanged"""
+    df = pd.DataFrame({
+        'date_col': pd.to_datetime(['2023-01-15', '2023-02-20', '2023-03-25'])
+    })
+    
+    result = auto_cast_datetime(df, 'date_col')
+    
+    assert pd.api.types.is_datetime64_any_dtype(result['date_col'])
+
+
+def test_remove_duplicates_all_columns():
+    """Test removing duplicate rows based on all columns"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Alice', 'Charlie', 'Bob'],
+        'age': [25, 30, 25, 35, 30],
+        'city': ['NYC', 'LA', 'NYC', 'SF', 'LA']
+    })
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == 3  # Should have 3 unique rows
+    assert len(df) == 5  # Original has 5 rows
+    # First occurrences should be kept
+    assert result.iloc[0]['name'] == 'Alice'
+    assert result.iloc[1]['name'] == 'Bob'
+    assert result.iloc[2]['name'] == 'Charlie'
+
+
+def test_remove_duplicates_subset():
+    """Test removing duplicates based on specific columns"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Alice', 'Charlie'],
+        'age': [25, 30, 35, 40],
+        'city': ['NYC', 'LA', 'SF', 'CHI']
+    })
+    
+    # Remove duplicates based on name column only
+    result = remove_duplicates(df, subset=['name'])
+    
+    assert len(result) == 3  # Alice appears twice, should be deduplicated
+    assert 'Alice' in result['name'].values
+    assert 'Bob' in result['name'].values
+    assert 'Charlie' in result['name'].values
+
+
+def test_remove_duplicates_keep_last():
+    """Test keeping last occurrence of duplicates"""
+    df = pd.DataFrame({
+        'id': [1, 2, 1, 3],
+        'value': ['a', 'b', 'c', 'd']
+    })
+    
+    result = remove_duplicates(df, subset=['id'], keep='last')
+    
+    assert len(result) == 3
+    # Last occurrence of id=1 has value='c'
+    assert result[result['id'] == 1]['value'].iloc[0] == 'c'
+
+
+def test_remove_duplicates_no_duplicates():
+    """Test remove_duplicates when there are no duplicates"""
+    df = pd.DataFrame({
+        'name': ['Alice', 'Bob', 'Charlie'],
+        'age': [25, 30, 35]
+    })
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == len(df)
+    assert result.equals(df)
+
+
+def test_remove_duplicates_empty_dataframe():
+    """Test remove_duplicates with empty DataFrame"""
+    df = pd.DataFrame({'name': [], 'age': []})
+    
+    result = remove_duplicates(df)
+    
+    assert len(result) == 0
+    assert list(result.columns) == ['name', 'age']

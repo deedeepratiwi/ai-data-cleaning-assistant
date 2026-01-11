@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from pathlib import Path
 from sqlalchemy.orm import Session
 
@@ -49,7 +50,33 @@ class ApplyService:
 
                 df = operation(df, **params)
 
+            # Save the cleaned DataFrame to CSV
             df.to_csv(output_path, index=False)
+            
+            # Save dtype metadata to help users understand the data types
+            # (CSV format doesn't preserve dtypes like datetime64)
+            try:
+                dtype_info = {}
+                datetime_columns = []
+                for col in df.columns:
+                    dtype_str = str(df[col].dtype)
+                    dtype_info[col] = dtype_str
+                    if pd.api.types.is_datetime64_any_dtype(df[col]):
+                        datetime_columns.append(col)
+                
+                # Save metadata file
+                metadata_path = output_dir / f"{job_id}_dtypes.json"
+                metadata = {
+                    "dtypes": dtype_info,
+                    "datetime_columns": datetime_columns,
+                    "note": "CSV format converts datetime to strings. Use parse_dates parameter when reading."
+                }
+                with open(metadata_path, 'w', encoding='utf-8') as f:
+                    json.dump(metadata, f, indent=2)
+            except (IOError, OSError) as e:
+                # Log warning but don't fail the job if metadata can't be written
+                # The cleaned CSV is still valid
+                print(f"Warning: Could not write dtype metadata file: {e}")
 
             self.job_repo.update_status(job_id, "done")
         except Exception:

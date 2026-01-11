@@ -4,8 +4,11 @@ from transformations.operations import (
     cast_type,
     drop_column,
     standardize_case,
+    standardize_column_names,
     replace_non_values,
     auto_cast_type,
+    auto_cast_datetime,
+    remove_duplicates,
 )
 
 
@@ -15,6 +18,9 @@ TRANSFORMATION_REGISTRY = {
     "cast_type": cast_type,
     "drop_column": drop_column,
     "standardize_case": standardize_case,
+    "standardize_column_names": standardize_column_names,
     "replace_non_values": replace_non_values,
     "auto_cast_type": auto_cast_type,
+    "auto_cast_datetime": auto_cast_datetime,
+    "remove_duplicates": remove_duplicates,
 }
