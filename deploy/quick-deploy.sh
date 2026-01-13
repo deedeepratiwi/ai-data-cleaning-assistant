@@ -35,6 +35,15 @@ gcloud run deploy ai-data-cleaning-mcp \
     --min-instances=1 \
     --timeout=300
 
+# Set IAM policy for MCP service to allow public access
+echo "🔐 Setting IAM policy for MCP service..."
+gcloud run services add-iam-policy-binding ai-data-cleaning-mcp \
+    --region=$REGION \
+    --project=$PROJECT_ID \
+    --member="allUsers" \
+    --role="roles/run.invoker" \
+    --quiet || echo "⚠️  IAM policy may already be set"
+
 # Get MCP URL
 MCP_URL=$(gcloud run services describe ai-data-cleaning-mcp \
     --region=$REGION \
@@ -58,6 +67,15 @@ gcloud run deploy ai-data-cleaning-n8n \
     --timeout=300 \
     --set-env-vars="N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=$N8N_PASSWORD,N8N_HOST=0.0.0.0,N8N_PORT=5678,N8N_PROTOCOL=https"
 
+# Set IAM policy for n8n service to allow public access
+echo "🔐 Setting IAM policy for n8n service..."
+gcloud run services add-iam-policy-binding ai-data-cleaning-n8n \
+    --region=$REGION \
+    --project=$PROJECT_ID \
+    --member="allUsers" \
+    --role="roles/run.invoker" \
+    --quiet || echo "⚠️  IAM policy may already be set"
+
 N8N_URL=$(gcloud run services describe ai-data-cleaning-n8n \
     --region=$REGION \
     --project=$PROJECT_ID \
@@ -80,6 +98,15 @@ gcloud run deploy ai-data-cleaning-api \
     --min-instances=1 \
     --timeout=300 \
     --set-env-vars="MCP_URL=$MCP_URL,DATABASE_URL=sqlite:///./data.db"
+
+# Set IAM policy for API service to allow public access
+echo "🔐 Setting IAM policy for API service..."
+gcloud run services add-iam-policy-binding ai-data-cleaning-api \
+    --region=$REGION \
+    --project=$PROJECT_ID \
+    --member="allUsers" \
+    --role="roles/run.invoker" \
+    --quiet || echo "⚠️  IAM policy may already be set"
 
 API_URL=$(gcloud run services describe ai-data-cleaning-api \
     --region=$REGION \

@@ -58,6 +58,18 @@ steps:
       - --allow-unauthenticated
       - --set-env-vars
       - GCS_BUCKET=ai-data-cleaning-data
+  
+  # Set IAM policy for API service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_API_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
 
   # --------------------
   # Deploy MCP
@@ -75,6 +87,18 @@ steps:
       - --platform
       - managed
       - --allow-unauthenticated
+  
+  # Set IAM policy for MCP service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_MCP_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
 
   # --------------------
   # Deploy n8n
@@ -94,3 +118,15 @@ steps:
       - --allow-unauthenticated
       - --set-env-vars
       - N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin
+  
+  # Set IAM policy for n8n service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_N8N_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
