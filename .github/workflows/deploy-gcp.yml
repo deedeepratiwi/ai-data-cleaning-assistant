@@ -1,0 +1,121 @@
+name: Deploy to GCP Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      region:
+        description: 'GCP Region'
+        required: false
+        default: 'us-central1'
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build and Deploy with Cloud Build
+        run: |
+          gcloud builds submit \
+            --config cloudbuild.yaml \
+            --project $PROJECT_ID \
+            --substitutions=_REGION=$REGION
+
+      - name: Get Service URLs
+        id: get-urls
+        run: |
+          API_URL=$(gcloud run services describe ai-data-cleaning-api \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --format 'value(status.url)')
+          
+          MCP_URL=$(gcloud run services describe ai-data-cleaning-mcp \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --format 'value(status.url)')
+          
+          N8N_URL=$(gcloud run services describe ai-data-cleaning-n8n \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --format 'value(status.url)')
+          
+          echo "api-url=$API_URL" >> $GITHUB_OUTPUT
+          echo "mcp-url=$MCP_URL" >> $GITHUB_OUTPUT
+          echo "n8n-url=$N8N_URL" >> $GITHUB_OUTPUT
+
+      - name: Output Deployment Info
+        run: |
+          echo "🚀 Deployment Complete!"
+          echo ""
+          echo "Service URLs:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🌐 API Service:  ${{ steps.get-urls.outputs.api-url }}"
+          echo "🔧 MCP Service:  ${{ steps.get-urls.outputs.mcp-url }}"
+          echo "⚡ n8n Service:  ${{ steps.get-urls.outputs.n8n-url }}"
+          echo ""
+          echo "📝 Note: n8n default credentials are admin/admin"
+
+      - name: Verify Deployment
+        run: |
+          echo "🔍 Verifying API health..."
+          API_URL=${{ steps.get-urls.outputs.api-url }}
+          
+          # Wait a bit for service to be ready
+          sleep 10
+          
+          # Check health endpoint
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/health)
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ API health check passed"
+          else
+            echo "❌ API health check failed with code: $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Deployment Preview
+              
+              Your changes have been deployed to Cloud Run:
+              
+              - 🌐 **API Service**: ${{ steps.get-urls.outputs.api-url }}
+              - 🔧 **MCP Service**: ${{ steps.get-urls.outputs.mcp-url }}
+              - ⚡ **n8n Service**: ${{ steps.get-urls.outputs.n8n-url }}
+              
+              Test your changes before merging!`
+            })

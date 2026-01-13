@@ -1,0 +1,37 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ai-data-cleaning-api
+  labels:
+    cloud.googleapis.com/location: us-central1
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '10'
+        autoscaling.knative.dev/minScale: '1'
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/ai-data-cleaning-api:latest
+        ports:
+        - name: http1
+          containerPort: 8000
+        env:
+        - name: MCP_URL
+          value: "https://MCP_SERVICE_URL"
+        - name: DATABASE_URL
+          value: "sqlite:///./data.db"
+        - name: PORT
+          value: "8000"
+        resources:
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: data
+        emptyDir: {}

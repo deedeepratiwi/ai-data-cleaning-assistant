@@ -29,6 +29,8 @@ venv.bak/
 # =========================
 .env.*
 *.env
+# Allow .env.example files
+!.env.example
 secrets/
 credentials/
 *.key

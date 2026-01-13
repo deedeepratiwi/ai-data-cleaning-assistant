@@ -7,4 +7,7 @@ COPY transformations /app/transformations
 
 RUN pip install fastapi uvicorn pandas
 
-CMD ["uvicorn", "mcp.app:app", "--host", "0.0.0.0", "--port", "9000"]
+ENV PORT=9000
+EXPOSE $PORT
+
+CMD ["sh", "-c", "uvicorn mcp.app:app --host 0.0.0.0 --port $PORT"]
