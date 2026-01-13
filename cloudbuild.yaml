@@ -78,7 +78,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
       - '--region'
-      - 'us-central1'
+      - '$_REGION'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -104,7 +104,7 @@ steps:
       - '-c'
       - |
         gcloud run services describe ai-data-cleaning-mcp \
-          --region us-central1 \
+          --region $_REGION \
           --format 'value(status.url)' > /workspace/mcp_url.txt
     waitFor: ['deploy-mcp']
 
@@ -119,7 +119,7 @@ steps:
       - '--image'
       - 'n8nio/n8n:latest'
       - '--region'
-      - 'us-central1'
+      - '$_REGION'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -148,7 +148,7 @@ steps:
         MCP_URL=$(cat /workspace/mcp_url.txt)
         gcloud run deploy ai-data-cleaning-api \
           --image gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA \
-          --region us-central1 \
+          --region $_REGION \
           --platform managed \
           --allow-unauthenticated \
           --port 8000 \
@@ -167,6 +167,9 @@ images:
   - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
 
 timeout: '1800s'
+
+substitutions:
+  _REGION: 'us-central1'
 
 options:
   machineType: 'N1_HIGHCPU_8'
