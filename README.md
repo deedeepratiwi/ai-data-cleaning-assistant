@@ -2,6 +2,14 @@
 
 [![Tests](https://github.com/deedeepratiwi/ai-data-cleaning-assistant/workflows/Tests/badge.svg)](https://github.com/deedeepratiwi/ai-data-cleaning-assistant/actions)
 
+## 🌐 Live Demo
+
+The application is deployed on Google Cloud Platform (GCP) Cloud Run:
+
+- **🔧 API Service**: [https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app)
+- **⚡ MCP Service**: [https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app)
+- **🔄 n8n Service**: [https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app)
+
 ## 📌 Problem Description
 
 Raw tabular data (CSV/Excel) is often messy: inconsistent column names, missing values, mixed data types, duplicates, and unclear schemas. Cleaning this data is time-consuming, error-prone, and repetitive, especially for analysts and data scientists.
@@ -199,28 +207,41 @@ pytest --cov=. --cov-report=html tests/
 
 ### Using the API
 
+You can use the live production API or run locally:
+
+**Production API (Live on GCP):**
 ```bash
+# Set the API URL
+API_URL="https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app"
+
 # 1. Upload a file
-curl -X POST http://localhost:8000/jobs/upload \
+curl -X POST $API_URL/jobs/upload \
   -F "file=@dirty_data.csv"
 # Response: {"job_id": "abc-123", "status": "pending"}
 
 # 2. Start profiling (triggers full pipeline)
-curl -X POST http://localhost:8000/jobs/abc-123/profile
+curl -X POST $API_URL/jobs/abc-123/profile
 
 # 3. Check status
-curl http://localhost:8000/jobs/abc-123
+curl $API_URL/jobs/abc-123
 # Response: {"status": "done", ...}
 
 # 4. Download cleaned file
-curl http://localhost:8000/jobs/abc-123/download -o cleaned.csv
+curl $API_URL/jobs/abc-123/download -o cleaned.csv
 
 # 5. Get dtype metadata (for datetime columns)
-curl http://localhost:8000/jobs/abc-123/download/dtypes
+curl $API_URL/jobs/abc-123/download/dtypes
 # Response: {"dtypes": {...}, "datetime_columns": ["transaction_date"]}
 
 # 6. View cleaning report
-curl http://localhost:8000/jobs/abc-123/report
+curl $API_URL/jobs/abc-123/report
+```
+
+**Local Development:**
+```bash
+# Use localhost for local development
+curl -X POST http://localhost:8000/jobs/upload \
+  -F "file=@dirty_data.csv"
 ```
 
 ### Reading Cleaned CSV with Proper Data Types
@@ -231,8 +252,11 @@ Since CSV format doesn't preserve datetime types, use the dtype metadata:
 import pandas as pd
 import requests
 
+# Use production API or localhost
+API_URL = "https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app"  # or "http://localhost:8000"
+
 # Get dtype metadata
-response = requests.get(f"http://localhost:8000/jobs/{job_id}/download/dtypes")
+response = requests.get(f"{API_URL}/jobs/{job_id}/download/dtypes")
 metadata = response.json()
 
 # Read CSV with datetime columns properly parsed
@@ -630,11 +654,26 @@ pytest tests/integration
 
 ## 🚀 Deployment
 
-### Google Cloud Platform (GCP) - Cloud Run
+### Google Cloud Platform (GCP) - Cloud Run ✅ Live
 
-The application is designed to deploy seamlessly to GCP Cloud Run. See [deploy/GCP_DEPLOYMENT.md](deploy/GCP_DEPLOYMENT.md) for detailed instructions.
+**The application is currently deployed on GCP Cloud Run:**
 
-**Quick Deployment:**
+- **🔧 API Service**: [https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app)
+- **⚡ MCP Service**: [https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app)
+- **🔄 n8n Service**: [https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app)
+
+**Deployment Features:**
+- ✅ Auto-scaling (1-10 instances for API)
+- ✅ HTTPS by default
+- ✅ Zero-downtime deployments
+- ✅ Integrated logging and monitoring
+- ✅ CI/CD via GitHub Actions
+- ✅ Upload, cleaning, and download working correctly
+- ✅ Report generation functional
+
+**To deploy your own instance:**
+
+See [deploy/GCP_DEPLOYMENT.md](deploy/GCP_DEPLOYMENT.md) for detailed instructions.
 
 ```bash
 # Prerequisites: gcloud CLI installed and authenticated
@@ -647,31 +686,25 @@ This deploys three services:
 - **MCP Server** - Model Context Protocol server (Port 9000)  
 - **n8n** - Workflow automation (Port 5678)
 
-**Features:**
-- Auto-scaling (1-10 instances for API)
-- HTTPS by default
-- Zero-downtime deployments
-- Integrated logging and monitoring
-- CI/CD via GitHub Actions
-
 **Architecture:**
 ```
 ┌─────────────────┐
 │   Cloud Run     │
+│   (us-east1)    │
 │                 │
 │  ┌───────────┐  │
-│  │ FastAPI   │◄─┼── HTTPS Requests
+│  │ FastAPI   │◄─┼── HTTPS: ai-data-cleaning-api-arnhwr7jpa-et.a.run.app
 │  │ (Port 8000)│  │
 │  └─────┬─────┘  │
 │        │        │
 │        ▼        │
 │  ┌───────────┐  │
-│  │    MCP    │  │
+│  │    MCP    │◄─┼── HTTPS: ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app
 │  │ (Port 9000)│  │
 │  └───────────┘  │
 │                 │
 │  ┌───────────┐  │
-│  │    n8n    │  │
+│  │    n8n    │◄─┼── HTTPS: ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app
 │  │ (Port 5678)│  │
 │  └───────────┘  │
 └─────────────────┘
