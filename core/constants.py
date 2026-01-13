@@ -1,3 +1,5 @@
+import os
+
 JOB_STATUS_TRANSITIONS = {
     "pending": ["profiling"],
     "profiling": ["suggesting", "failed"],
@@ -8,4 +10,4 @@ JOB_STATUS_TRANSITIONS = {
 }
 
 # Use /tmp for Cloud Run compatibility (filesystem is read-only except /tmp)
-DATA_DIR = "/tmp/data"
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
