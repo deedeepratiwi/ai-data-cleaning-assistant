@@ -96,6 +96,18 @@ The system is designed as a **full-stack AI application** demonstrating modern A
 
 ---
 
+![Landing Page](images/landing_page.png)
+
+![Landing Page After](images/landing_page_after.png)
+
+![Data Before](images/data_before.png)
+
+![Data After](images/data_after.png)
+
+![Report](images/report.png)
+
+---
+
 ## 🧪 Testing
 
 ### Test Coverage
