@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Use /tmp for Cloud Run compatibility (filesystem is read-only except /tmp)
+# Note: sqlite:////tmp/data.db uses 4 slashes (sqlite:/// + /tmp/data.db absolute path)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/data.db")
 
 engine = create_engine(
