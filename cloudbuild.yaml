@@ -1,12 +1,79 @@
-codesnqueries@cloudshell:~/ai-data-cleaning-assistant (ai-data-cleaning-479007)$ deploy/deploy.sh ai-data-cleaning-479007 asia-southeast2
-🚀 Deploying AI Data Cleaning Assistant to GCP Cloud Run
-Project ID: ai-data-cleaning-479007
-Region: asia-southeast2
-Updated property [core/project].
-📦 Enabling required GCP APIs...
-Operation "operations/acat.p2-303109910730-bdc7e3ba-0b62-4ebb-b78c-e7a741ea5248" finished successfully.
-🔨 Building and deploying services using Cloud Build...
-Using image tag: d2e72f7
-Creating temporary archive of 55 file(s) totalling 2.4 MiB before compression.
-Uploading tarball of [.] to [gs://ai-data-cleaning-479007_cloudbuild/source/1768298857.715035-cff1725ff33d4d6fb6a58d89368a44bc.tgz]
-ERROR: (gcloud.builds.submit) INVALID_ARGUMENT: invalid build: invalid image name "asia-southeast2-docker.pkg.dev/ai-data-cleaning-479007/adc-repo/api:": could not parse reference: asia-southeast2-docker.pkg.dev/ai-data-cleaning-479007/adc-repo/api:
+substitutions:
+  _REGION: asia-southeast2
+  _REPO: adc-repo
+  _API_SERVICE: ai-data-cleaning-api
+  _MCP_SERVICE: ai-data-cleaning-mcp
+  _N8N_SERVICE: ai-data-cleaning-n8n
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/api:${BUILD_ID}
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/api:${BUILD_ID}
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - mcp/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/mcp:${BUILD_ID}
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/mcp:${BUILD_ID}
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_API_SERVICE}
+      - --image
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/api:${BUILD_ID}
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - GCS_BUCKET=ai-data-cleaning-data
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_MCP_SERVICE}
+      - --image
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/mcp:${BUILD_ID}
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_N8N_SERVICE}
+      - --image
+      - n8nio/n8n
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin
