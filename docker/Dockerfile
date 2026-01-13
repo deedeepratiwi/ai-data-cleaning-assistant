@@ -14,7 +14,7 @@ COPY pyproject.toml /app/
 RUN pip install --no-cache-dir --upgrade pip
 
 COPY . /app/
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 ENV PORT=8000
 EXPOSE $PORT
