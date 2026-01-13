@@ -7,8 +7,8 @@
 The application is deployed on Google Cloud Platform (GCP) Cloud Run:
 
 - **🔧 API Service**: [https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app)
-- **⚡ MCP Service**: [https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app)
-- **🔄 n8n Service**: [https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app)
+
+---
 
 ## 📌 Problem Description
 
@@ -659,8 +659,6 @@ pytest tests/integration
 **The application is currently deployed on GCP Cloud Run:**
 
 - **🔧 API Service**: [https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-api-arnhwr7jpa-et.a.run.app)
-- **⚡ MCP Service**: [https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app)
-- **🔄 n8n Service**: [https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app](https://ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app)
 
 **Deployment Features:**
 - ✅ Auto-scaling (1-10 instances for API)
@@ -694,26 +692,21 @@ This deploys three services:
 │                 │
 │  ┌───────────┐  │
 │  │ FastAPI   │◄─┼── HTTPS: ai-data-cleaning-api-arnhwr7jpa-et.a.run.app
-│  │ (Port 8000)│  │
+│  │(Port 8000)│  │
 │  └─────┬─────┘  │
 │        │        │
 │        ▼        │
 │  ┌───────────┐  │
-│  │    MCP    │◄─┼── HTTPS: ai-data-cleaning-mcp-arnhwr7jpa-et.a.run.app
-│  │ (Port 9000)│  │
+│  │    MCP    │  |
+│  │(Port 9000)│  │
 │  └───────────┘  │
 │                 │
 │  ┌───────────┐  │
-│  │    n8n    │◄─┼── HTTPS: ai-data-cleaning-n8n-arnhwr7jpa-et.a.run.app
-│  │ (Port 5678)│  │
+│  │    n8n    │  |
+│  │(Port 5678)│  │
 │  └───────────┘  │
 └─────────────────┘
 ```
-
-**Other Platforms:**
-- Render / Fly.io / Railway - Use the provided Dockerfiles
-- Kubernetes - Convert docker-compose.yaml to K8s manifests
-- Traditional VPS - Run via docker-compose
 
 ---
 
