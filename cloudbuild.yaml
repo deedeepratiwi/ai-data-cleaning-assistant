@@ -1,166 +1,99 @@
-# Cloud Build Configuration for AI Data Cleaning Assistant
-#
-# SECURITY NOTE: This configuration uses default n8n credentials (admin/admin)
-# For production deployments:
-# 1. Store credentials in Secret Manager
-# 2. Pass them as substitution variables
-# 3. Update n8n deployment command with: --update-secrets=N8N_PASSWORD=n8n-password:latest
-#
-# Usage: gcloud builds submit --config cloudbuild.yaml
-#
+substitutions:
+  _REGION: asia-southeast2
+  _REPO: adc-repo
+  _API_SERVICE: ai-data-cleaning-api
+  _MCP_SERVICE: ai-data-cleaning-mcp
+  _N8N_SERVICE: ai-data-cleaning-n8n
+
 steps:
-  # Build FastAPI container
-  - name: 'gcr.io/cloud-builders/docker'
-    id: build-api
+  # --------------------
+  # Build API image
+  # --------------------
+  - name: gcr.io/cloud-builders/docker
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
-      - '-f'
-      - 'docker/Dockerfile'
-      - '.'
+      [
+        "build",
+        "-t",
+        "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/api:$SHORT_SHA",
+        "."
+      ]
 
-  # Build MCP container
-  - name: 'gcr.io/cloud-builders/docker'
-    id: build-mcp
+  - name: gcr.io/cloud-builders/docker
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
-      - '-f'
-      - 'mcp/Dockerfile'
-      - '.'
+      [
+        "push",
+        "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/api:$SHORT_SHA"
+      ]
 
-  # Push FastAPI container
-  - name: 'gcr.io/cloud-builders/docker'
-    id: push-api
+  # --------------------
+  # Build MCP image
+  # --------------------
+  - name: gcr.io/cloud-builders/docker
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
-    waitFor: ['build-api']
+      [
+        "build",
+        "-f",
+        "mcp/Dockerfile",
+        "-t",
+        "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/mcp:$SHORT_SHA",
+        "."
+      ]
 
-  # Push API latest tag
-  - name: 'gcr.io/cloud-builders/docker'
-    id: push-api-latest
+  - name: gcr.io/cloud-builders/docker
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
-    waitFor: ['build-api']
+      [
+        "push",
+        "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/mcp:$SHORT_SHA"
+      ]
 
-  # Push MCP container
-  - name: 'gcr.io/cloud-builders/docker'
-    id: push-mcp
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
-    waitFor: ['build-mcp']
-
-  # Push MCP latest tag
-  - name: 'gcr.io/cloud-builders/docker'
-    id: push-mcp-latest
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
-    waitFor: ['build-mcp']
-
-  # Deploy MCP service (needs to be first for API to connect)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: deploy-mcp
+  # --------------------
+  # Deploy API
+  # --------------------
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
-      - 'run'
-      - 'deploy'
-      - 'ai-data-cleaning-mcp'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
-      - '--region'
-      - '$_REGION'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '9000'
-      - '--cpu'
-      - '1'
-      - '--memory'
-      - '1Gi'
-      - '--max-instances'
-      - '5'
-      - '--min-instances'
-      - '1'
-      - '--timeout'
-      - '300'
-    waitFor: ['push-mcp', 'push-mcp-latest']
+      [
+        "run", "deploy", "$_API_SERVICE",
+        "--image", "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/api:$SHORT_SHA",
+        "--region", "$_REGION",
+        "--platform", "managed",
+        "--allow-unauthenticated",
+        "--set-env-vars",
+        "GCS_BUCKET=ai-data-cleaning-data"
+      ]
 
-  # Get MCP service URL
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: get-mcp-url
-    entrypoint: bash
-    args:
-      - '-c'
-      - |
-        gcloud run services describe ai-data-cleaning-mcp \
-          --region $_REGION \
-          --format 'value(status.url)' > /workspace/mcp_url.txt
-    waitFor: ['deploy-mcp']
-
-  # Deploy n8n service
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: deploy-n8n
+  # --------------------
+  # Deploy MCP
+  # --------------------
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
-      - 'run'
-      - 'deploy'
-      - 'ai-data-cleaning-n8n'
-      - '--image'
-      - 'n8nio/n8n:latest'
-      - '--region'
-      - '$_REGION'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '5678'
-      - '--cpu'
-      - '1'
-      - '--memory'
-      - '1Gi'
-      - '--max-instances'
-      - '3'
-      - '--min-instances'
-      - '1'
-      - '--timeout'
-      - '300'
-      - '--set-env-vars'
-      - 'N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin,N8N_HOST=0.0.0.0,N8N_PORT=5678,N8N_PROTOCOL=https'
+      [
+        "run", "deploy", "$_MCP_SERVICE",
+        "--image", "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/mcp:$SHORT_SHA",
+        "--region", "$_REGION",
+        "--platform", "managed",
+        "--allow-unauthenticated"
+      ]
 
-  # Deploy FastAPI service
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: deploy-api
-    entrypoint: bash
+  # --------------------
+  # Deploy n8n
+  # --------------------
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
     args:
-      - '-c'
-      - |
-        MCP_URL=$(cat /workspace/mcp_url.txt)
-        gcloud run deploy ai-data-cleaning-api \
-          --image gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA \
-          --region $_REGION \
-          --platform managed \
-          --allow-unauthenticated \
-          --port 8000 \
-          --cpu 2 \
-          --memory 2Gi \
-          --max-instances 10 \
-          --min-instances 1 \
-          --timeout 300 \
-          --set-env-vars MCP_URL=$$MCP_URL,DATABASE_URL=sqlite:///./data.db
-    waitFor: ['push-api', 'push-api-latest', 'get-mcp-url']
+      [
+        "run", "deploy", "$_N8N_SERVICE",
+        "--image", "n8nio/n8n",
+        "--region", "$_REGION",
+        "--platform", "managed",
+        "--allow-unauthenticated",
+        "--set-env-vars",
+        "N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin"
+      ]
 
 images:
+<<<<<<< HEAD
   - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
   - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
   - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
@@ -175,3 +108,7 @@ substitutions:
 options:
   machineType: 'N1_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
+=======
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/api:$SHORT_SHA"
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/mcp:$SHORT_SHA"
+>>>>>>> 484ba4c (update deploy.sh)
