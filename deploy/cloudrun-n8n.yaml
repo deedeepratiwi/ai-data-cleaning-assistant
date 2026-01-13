@@ -1,3 +1,16 @@
+# Cloud Run service configuration for n8n workflow automation
+# 
+# SECURITY WARNING: Default credentials are admin/admin
+# For production deployments:
+# 1. Change N8N_BASIC_AUTH_PASSWORD value below
+# 2. Or use Secret Manager reference:
+#    valueFrom:
+#      secretKeyRef:
+#        name: n8n-password
+#        key: latest
+# 
+# See: https://cloud.google.com/run/docs/configuring/secrets
+#
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
@@ -24,7 +37,7 @@ spec:
         - name: N8N_BASIC_AUTH_USER
           value: "admin"
         - name: N8N_BASIC_AUTH_PASSWORD
-          value: "admin"
+          value: "admin"  # CHANGE THIS IN PRODUCTION!
         - name: N8N_HOST
           value: "0.0.0.0"
         - name: N8N_PORT

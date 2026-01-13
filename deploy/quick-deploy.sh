@@ -7,7 +7,18 @@ set -e
 PROJECT_ID=${1:-"your-gcp-project-id"}
 REGION=${2:-"us-central1"}
 
+# Generate a random password for n8n or use environment variable
+N8N_PASSWORD=${N8N_PASSWORD:-"admin"}
+
 echo "🚀 Quick deploying to GCP Cloud Run"
+echo ""
+if [ "$N8N_PASSWORD" = "admin" ]; then
+    echo "⚠️  WARNING: Using default n8n password 'admin'"
+    echo "⚠️  For production, set N8N_PASSWORD environment variable:"
+    echo "    export N8N_PASSWORD='your-secure-password'"
+    echo "    or pass it via: N8N_PASSWORD='your-password' ./quick-deploy.sh"
+    echo ""
+fi
 
 # Step 1: Deploy MCP service
 echo "📦 Deploying MCP service..."
@@ -45,7 +56,7 @@ gcloud run deploy ai-data-cleaning-n8n \
     --max-instances=3 \
     --min-instances=1 \
     --timeout=300 \
-    --set-env-vars="N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin,N8N_HOST=0.0.0.0,N8N_PORT=5678,N8N_PROTOCOL=https"
+    --set-env-vars="N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=$N8N_PASSWORD,N8N_HOST=0.0.0.0,N8N_PORT=5678,N8N_PROTOCOL=https"
 
 N8N_URL=$(gcloud run services describe ai-data-cleaning-n8n \
     --region=$REGION \
@@ -84,4 +95,9 @@ echo "🌐 API Service:  $API_URL"
 echo "🔧 MCP Service:  $MCP_URL"
 echo "⚡ n8n Service:  $N8N_URL"
 echo ""
-echo "📝 n8n credentials: admin/admin"
+if [ "$N8N_PASSWORD" = "admin" ]; then
+    echo "📝 n8n credentials: admin/admin"
+    echo "⚠️  IMPORTANT: Change the n8n password in production!"
+else
+    echo "📝 n8n credentials: admin/$N8N_PASSWORD"
+fi
