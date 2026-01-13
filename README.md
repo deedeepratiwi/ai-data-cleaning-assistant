@@ -21,6 +21,8 @@ Raw tabular data (CSV/Excel) is often messy: inconsistent column names, missing 
 * Generates and applies cleaning suggestions using intelligent detection algorithms
 * Returns a cleaned dataset plus a human-readable explanation of changes
 
+![Flow Diagram](images/flow_diagram.png)
+
 ### Key Features
 
 ✅ **Automated Column Standardization** - Converts column names to snake_case  
