@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import jobs, upload, orchestrate, apply, download, report, suggestions
+from api.routes import jobs, orchestrate, apply, download, report, suggestions
 
 app = FastAPI(
     title="AI Data Cleaning Assistant",
@@ -24,7 +24,6 @@ def health():
 
 # Include API routers
 app.include_router(jobs.router)
-app.include_router(upload.router)
 app.include_router(orchestrate.router)
 app.include_router(apply.router)
 app.include_router(download.router)
