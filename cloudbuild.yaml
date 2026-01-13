@@ -64,7 +64,7 @@ steps:
       - managed
       - --allow-unauthenticated
       - --set-env-vars
-      - GCS_BUCKET=ai-data-cleaning-data
+      - GCS_BUCKET=ai-data-cleaning-data,DATABASE_URL=sqlite:////tmp/data.db
 
   # Explicitly grant public access to API service
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk

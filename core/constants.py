@@ -7,4 +7,5 @@ JOB_STATUS_TRANSITIONS = {
     "failed": ["profiling"],  # 👈 retry allowed
 }
 
-DATA_DIR = "data"
+# Use /tmp for Cloud Run compatibility (filesystem is read-only except /tmp)
+DATA_DIR = "/tmp/data"
