@@ -170,6 +170,7 @@ timeout: '1800s'
 
 substitutions:
   _REGION: 'us-central1'
+  SHORT_SHA: 'latest'
 
 options:
   machineType: 'N1_HIGHCPU_8'

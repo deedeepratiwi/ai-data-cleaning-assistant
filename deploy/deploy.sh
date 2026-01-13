@@ -31,9 +31,13 @@ gcloud services enable \
 
 # Build and push images using Cloud Build
 echo "🔨 Building and deploying services using Cloud Build..."
+# Get git commit SHA for image tagging
+SHORT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+echo "Using image tag: $SHORT_SHA"
+
 gcloud builds submit \
     --config cloudbuild.yaml \
-    --substitutions=_REGION=$REGION \
+    --substitutions=_REGION=$REGION,SHORT_SHA=$SHORT_SHA \
     .
 
 # Get service URLs
