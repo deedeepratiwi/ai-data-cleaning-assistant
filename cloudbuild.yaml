@@ -1,9 +1,9 @@
 # Cloud Build configuration for deploying AI Data Cleaning Assistant to Cloud Run
 # 
 # Note: Services are deployed with --allow-unauthenticated flag to enable public access.
-# If the Cloud Build service account lacks setIamPolicy permission, a warning may appear
-# but the deployment will still succeed. Manual IAM policy binding can be done separately
-# if needed via: gcloud run services add-iam-policy-binding SERVICE_NAME --region=REGION --member=allUsers --role=roles/run.invoker
+# Explicit IAM policy binding steps follow each deployment to ensure public access is granted.
+# This prevents 403 Forbidden errors that can occur when the Cloud Build service account
+# lacks the setIamPolicy permission during the initial deployment.
 
 substitutions:
   _REGION: asia-southeast2
@@ -64,7 +64,19 @@ steps:
       - managed
       - --allow-unauthenticated
       - --set-env-vars
-      - GCS_BUCKET=ai-data-cleaning-data
+      - GCS_BUCKET=ai-data-cleaning-data,DATABASE_URL=sqlite:////tmp/data.db
+
+  # Explicitly grant public access to API service
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_API_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
 
   # --------------------
   # Deploy MCP
@@ -82,6 +94,18 @@ steps:
       - --platform
       - managed
       - --allow-unauthenticated
+
+  # Explicitly grant public access to MCP service
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_MCP_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
 
   # --------------------
   # Deploy n8n
@@ -103,3 +127,15 @@ steps:
       - '5678'
       - --set-env-vars
       - N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin
+
+  # Explicitly grant public access to n8n service
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_N8N_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker

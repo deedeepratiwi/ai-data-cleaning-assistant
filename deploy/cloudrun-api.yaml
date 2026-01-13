@@ -22,16 +22,10 @@ spec:
         - name: MCP_URL
           value: "https://MCP_SERVICE_URL"
         - name: DATABASE_URL
-          value: "sqlite:///./data.db"
+          value: "sqlite:////tmp/data.db"
         - name: PORT
           value: "8000"
         resources:
           limits:
             cpu: '2'
             memory: 2Gi
-        volumeMounts:
-        - name: data
-          mountPath: /app/data
-      volumes:
-      - name: data
-        emptyDir: {}

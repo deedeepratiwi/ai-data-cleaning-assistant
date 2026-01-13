@@ -97,7 +97,7 @@ gcloud run deploy ai-data-cleaning-api \
     --max-instances=10 \
     --min-instances=1 \
     --timeout=300 \
-    --set-env-vars="MCP_URL=$MCP_URL,DATABASE_URL=sqlite:///./data.db"
+    --set-env-vars="MCP_URL=$MCP_URL,DATABASE_URL=sqlite:////tmp/data.db"
 
 # Set IAM policy for API service to allow public access
 echo "🔐 Setting IAM policy for API service..."
