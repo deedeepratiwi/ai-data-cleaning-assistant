@@ -1,0 +1,29 @@
+# Docker Compose Override for Local Development
+# This file extends docker-compose.yaml with development-specific settings
+# 
+# Usage:
+#   docker-compose up                    # Uses base + override
+#   docker-compose -f docker-compose.yaml up  # Base only (production-like)
+
+version: "3.9"
+
+services:
+  api:
+    # Enable hot reload for development
+    volumes:
+      - ./api:/app/api
+      - ./services:/app/services
+      - ./core:/app/core
+      - ./transformations:/app/transformations
+      - ./storage:/app/storage
+    environment:
+      - DEBUG=true
+      - RELOAD=true
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  mcp:
+    # Enable hot reload for MCP service
+    volumes:
+      - ./mcp:/app/mcp
+      - ./transformations:/app/transformations
+    command: uvicorn mcp.app:app --host 0.0.0.0 --port 9000 --reload

@@ -1,0 +1,163 @@
+steps:
+  # Build FastAPI container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-api
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
+      - '-f'
+      - 'docker/Dockerfile'
+      - '.'
+
+  # Build MCP container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-mcp
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
+      - '-f'
+      - 'mcp/Dockerfile'
+      - '.'
+
+  # Push FastAPI container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-api
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
+    waitFor: ['build-api']
+
+  # Push API latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-api-latest
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
+    waitFor: ['build-api']
+
+  # Push MCP container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-mcp
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
+    waitFor: ['build-mcp']
+
+  # Push MCP latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-mcp-latest
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
+    waitFor: ['build-mcp']
+
+  # Deploy MCP service (needs to be first for API to connect)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-mcp
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'ai-data-cleaning-mcp'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '9000'
+      - '--cpu'
+      - '1'
+      - '--memory'
+      - '1Gi'
+      - '--max-instances'
+      - '5'
+      - '--min-instances'
+      - '1'
+      - '--timeout'
+      - '300'
+    waitFor: ['push-mcp', 'push-mcp-latest']
+
+  # Get MCP service URL
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: get-mcp-url
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gcloud run services describe ai-data-cleaning-mcp \
+          --region us-central1 \
+          --format 'value(status.url)' > /workspace/mcp_url.txt
+    waitFor: ['deploy-mcp']
+
+  # Deploy n8n service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-n8n
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'ai-data-cleaning-n8n'
+      - '--image'
+      - 'n8nio/n8n:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '5678'
+      - '--cpu'
+      - '1'
+      - '--memory'
+      - '1Gi'
+      - '--max-instances'
+      - '3'
+      - '--min-instances'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--set-env-vars'
+      - 'N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin,N8N_HOST=0.0.0.0,N8N_PORT=5678,N8N_PROTOCOL=https'
+
+  # Deploy FastAPI service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-api
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        MCP_URL=$(cat /workspace/mcp_url.txt)
+        gcloud run deploy ai-data-cleaning-api \
+          --image gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA \
+          --region us-central1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --port 8000 \
+          --cpu 2 \
+          --memory 2Gi \
+          --max-instances 10 \
+          --min-instances 1 \
+          --timeout 300 \
+          --set-env-vars MCP_URL=$MCP_URL,DATABASE_URL=sqlite:///./data.db
+    waitFor: ['push-api', 'push-api-latest', 'get-mcp-url']
+
+images:
+  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
+  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
+
+timeout: '1800s'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY

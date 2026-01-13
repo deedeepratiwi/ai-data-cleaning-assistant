@@ -608,9 +608,57 @@ pytest tests/integration
 
 ## 🚀 Deployment
 
-* Deployed to cloud infrastructure (example: Render / Fly.io / GCP)
-* Live demo URL provided in repository description
-* Deployment configuration included in `deploy/`
+### Google Cloud Platform (GCP) - Cloud Run
+
+The application is designed to deploy seamlessly to GCP Cloud Run. See [deploy/GCP_DEPLOYMENT.md](deploy/GCP_DEPLOYMENT.md) for detailed instructions.
+
+**Quick Deployment:**
+
+```bash
+# Prerequisites: gcloud CLI installed and authenticated
+cd deploy
+./deploy.sh YOUR_PROJECT_ID us-central1
+```
+
+This deploys three services:
+- **FastAPI API** - Main backend service (Port 8000)
+- **MCP Server** - Model Context Protocol server (Port 9000)  
+- **n8n** - Workflow automation (Port 5678)
+
+**Features:**
+- Auto-scaling (1-10 instances for API)
+- HTTPS by default
+- Zero-downtime deployments
+- Integrated logging and monitoring
+- CI/CD via GitHub Actions
+
+**Architecture:**
+```
+┌─────────────────┐
+│   Cloud Run     │
+│                 │
+│  ┌───────────┐  │
+│  │ FastAPI   │◄─┼── HTTPS Requests
+│  │ (Port 8000)│  │
+│  └─────┬─────┘  │
+│        │        │
+│        ▼        │
+│  ┌───────────┐  │
+│  │    MCP    │  │
+│  │ (Port 9000)│  │
+│  └───────────┘  │
+│                 │
+│  ┌───────────┐  │
+│  │    n8n    │  │
+│  │ (Port 5678)│  │
+│  └───────────┘  │
+└─────────────────┘
+```
+
+**Other Platforms:**
+- Render / Fly.io / Railway - Use the provided Dockerfiles
+- Kubernetes - Convert docker-compose.yaml to K8s manifests
+- Traditional VPS - Run via docker-compose
 
 ---
 
