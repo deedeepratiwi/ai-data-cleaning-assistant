@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -5,15 +6,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import jobs, orchestrate, apply, download, report, suggestions
 from storage.db import Base, engine
 
-app = FastAPI(
-    title="AI Data Cleaning Assistant",
-    version="0.1.0"
-)
 
-@app.on_event("startup")
-def init_db():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Initialize database tables on application startup"""
     Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(
+    title="AI Data Cleaning Assistant",
+    version="0.1.0",
+    lifespan=lifespan
+)
 
 # Add CORS middleware
 app.add_middleware(
