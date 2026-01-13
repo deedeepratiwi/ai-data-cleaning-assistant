@@ -1,6 +1,6 @@
 substitutions:
   _REGION: asia-southeast2
-  _REPO: adc-repo
+  _REPO: ai-data-cleaning-repo
   _API_SERVICE: ai-data-cleaning-api
   _MCP_SERVICE: ai-data-cleaning-mcp
   _N8N_SERVICE: ai-data-cleaning-n8n
