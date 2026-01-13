@@ -6,9 +6,14 @@ substitutions:
   _N8N_SERVICE: ai-data-cleaning-n8n
 
 steps:
+  # --------------------
+  # Build API image
+  # --------------------
   - name: gcr.io/cloud-builders/docker
     args:
       - build
+      - -f
+      - docker/Dockerfile
       - -t
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/api:${BUILD_ID}
       - .
@@ -18,6 +23,9 @@ steps:
       - push
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/api:${BUILD_ID}
 
+  # --------------------
+  # Build MCP image
+  # --------------------
   - name: gcr.io/cloud-builders/docker
     args:
       - build
@@ -32,6 +40,9 @@ steps:
       - push
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/mcp:${BUILD_ID}
 
+  # --------------------
+  # Deploy API
+  # --------------------
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
@@ -48,6 +59,9 @@ steps:
       - --set-env-vars
       - GCS_BUCKET=ai-data-cleaning-data
 
+  # --------------------
+  # Deploy MCP
+  # --------------------
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
@@ -62,6 +76,9 @@ steps:
       - managed
       - --allow-unauthenticated
 
+  # --------------------
+  # Deploy n8n
+  # --------------------
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
