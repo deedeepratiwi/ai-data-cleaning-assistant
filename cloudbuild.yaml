@@ -3,7 +3,7 @@
 # Note: Services are deployed with --allow-unauthenticated flag to enable public access.
 # If the Cloud Build service account lacks setIamPolicy permission, a warning may appear
 # but the deployment will still succeed. Manual IAM policy binding can be done separately
-# if needed via: gcloud run services add-iam-policy-binding --member=allUsers --role=roles/run.invoker
+# if needed via: gcloud run services add-iam-policy-binding SERVICE_NAME --region=REGION --member=allUsers --role=roles/run.invoker
 
 substitutions:
   _REGION: asia-southeast2
