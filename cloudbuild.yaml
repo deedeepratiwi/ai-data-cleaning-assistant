@@ -99,5 +99,7 @@ steps:
       - --platform
       - managed
       - --allow-unauthenticated
+      - --port
+      - '5678'
       - --set-env-vars
       - N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin
