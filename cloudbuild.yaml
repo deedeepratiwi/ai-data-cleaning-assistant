@@ -93,22 +93,5 @@ steps:
       ]
 
 images:
-<<<<<<< HEAD
-  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:$SHORT_SHA'
-  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-api:latest'
-  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:$SHORT_SHA'
-  - 'gcr.io/$PROJECT_ID/ai-data-cleaning-mcp:latest'
-
-timeout: '1800s'
-
-substitutions:
-  _REGION: 'us-central1'
-  SHORT_SHA: 'latest'
-
-options:
-  machineType: 'N1_HIGHCPU_8'
-  logging: CLOUD_LOGGING_ONLY
-=======
   - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/api:$SHORT_SHA"
   - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/mcp:$SHORT_SHA"
->>>>>>> 484ba4c (update deploy.sh)

@@ -37,10 +37,6 @@ echo "Using image tag: $SHORT_SHA"
 
 gcloud builds submit \
     --config cloudbuild.yaml \
-<<<<<<< HEAD
-    --substitutions=_REGION=$REGION,SHORT_SHA=$SHORT_SHA \
-=======
->>>>>>> 484ba4c (update deploy.sh)
     .
 
 # Get service URLs
