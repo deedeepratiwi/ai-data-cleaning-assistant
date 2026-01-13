@@ -1,3 +1,10 @@
+# Cloud Build configuration for deploying AI Data Cleaning Assistant to Cloud Run
+# 
+# Note: Each service deployment includes an explicit IAM policy binding step
+# to ensure public access (allUsers can invoke). This prevents IAM policy
+# warnings that can occur when the Cloud Build service account lacks
+# permissions to automatically set policies via --allow-unauthenticated flag.
+
 substitutions:
   _REGION: asia-southeast2
   _REPO: ai-data-cleaning-repo
@@ -59,6 +66,19 @@ steps:
       - --set-env-vars
       - GCS_BUCKET=ai-data-cleaning-data
 
+  # Set IAM policy for API service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_API_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
+      - --quiet
+
   # --------------------
   # Deploy MCP
   # --------------------
@@ -75,6 +95,19 @@ steps:
       - --platform
       - managed
       - --allow-unauthenticated
+
+  # Set IAM policy for MCP service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_MCP_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
+      - --quiet
 
   # --------------------
   # Deploy n8n
@@ -94,3 +127,16 @@ steps:
       - --allow-unauthenticated
       - --set-env-vars
       - N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin,N8N_BASIC_AUTH_PASSWORD=admin
+
+  # Set IAM policy for n8n service to allow public access
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - ${_N8N_SERVICE}
+      - --region=${_REGION}
+      - --member=allUsers
+      - --role=roles/run.invoker
+      - --quiet

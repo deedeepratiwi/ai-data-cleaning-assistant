@@ -383,7 +383,20 @@ gcloud run services describe ai-data-cleaning-api --region=us-central1
    - Check IAM permissions
    - Verify service account has required roles
 
-4. **Database Connection Issues**
+4. **IAM Policy Binding Warnings**
+   - If you see warnings like "Setting IAM policy failed" during deployment, the Cloud Build service account may lack permissions to set IAM policies
+   - The deployment will still succeed, but services may not be publicly accessible
+   - Solution: The `cloudbuild.yaml` now includes explicit IAM policy binding steps after each service deployment
+   - These steps use `gcloud run services add-iam-policy-binding` to ensure public access
+   - If the warning persists, grant the Cloud Build service account the `roles/run.developer` role (includes `run.services.setIamPolicy` permission):
+     ```bash
+     PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
+     gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+       --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
+       --role=roles/run.developer
+     ```
+
+5. **Database Connection Issues**
    - Verify Cloud SQL connection name
    - Check DATABASE_URL format
    - Ensure Cloud SQL Admin API is enabled
