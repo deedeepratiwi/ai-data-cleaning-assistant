@@ -157,7 +157,7 @@ steps:
           --max-instances 10 \
           --min-instances 1 \
           --timeout 300 \
-          --set-env-vars MCP_URL=$MCP_URL,DATABASE_URL=sqlite:///./data.db
+          --set-env-vars MCP_URL=$$MCP_URL,DATABASE_URL=sqlite:///./data.db
     waitFor: ['push-api', 'push-api-latest', 'get-mcp-url']
 
 images:
