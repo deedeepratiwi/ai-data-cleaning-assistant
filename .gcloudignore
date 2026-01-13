@@ -66,5 +66,4 @@ data/
 *.xlsx
 
 # Agent configs
-agents/
 .github/agents/
