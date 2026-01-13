@@ -1,3 +1,13 @@
+# Cloud Build Configuration for AI Data Cleaning Assistant
+#
+# SECURITY NOTE: This configuration uses default n8n credentials (admin/admin)
+# For production deployments:
+# 1. Store credentials in Secret Manager
+# 2. Pass them as substitution variables
+# 3. Update n8n deployment command with: --update-secrets=N8N_PASSWORD=n8n-password:latest
+#
+# Usage: gcloud builds submit --config cloudbuild.yaml
+#
 steps:
   # Build FastAPI container
   - name: 'gcr.io/cloud-builders/docker'
