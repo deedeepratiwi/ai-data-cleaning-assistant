@@ -1,3 +1,10 @@
+# Cloud Build configuration for deploying AI Data Cleaning Assistant to Cloud Run
+# 
+# Note: Each service deployment includes an explicit IAM policy binding step
+# to ensure public access (allUsers can invoke). This prevents IAM policy
+# warnings that can occur when the Cloud Build service account lacks
+# permissions to automatically set policies via --allow-unauthenticated flag.
+
 substitutions:
   _REGION: asia-southeast2
   _REPO: ai-data-cleaning-repo
